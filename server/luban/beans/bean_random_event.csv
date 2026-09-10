@@ -1,0 +1,14 @@
+##type = bean
+##file = RandomEvent
+##group = c,s
+##brief = 随机事件定义
+#name,type,comment,required
+id,string,唯一ID,1
+name,string,中文名,1
+text,string,描述文本,1
+tone,EventTone,语气,1
+kind,EventKind,事件种类,1
+res,ResourceType?,资源类型(仅instant),0
+seconds,int?,折算秒数产出(可负),0
+deadlineAdd,int?,倒计时增加秒(仅deadline),0
+weight,int?,权重(用于随机抽取),0

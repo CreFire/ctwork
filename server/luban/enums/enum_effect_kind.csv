@@ -1,0 +1,14 @@
+##type = enum
+##file = EffectKind
+##group = c,s
+##brief = 效果类型枚举
+#name,value,comment,hasRes,hasV,hasRoute,hasText
+mult,0,产出乘区,1,1,0,0
+clickMult,1,点击倍率,0,1,0,0
+autoClick,2,自动点击次数,0,1,0,0
+crit,3,暴击率,0,1,0,0
+countdown,4,倒计时延长秒,0,1,0,0
+enableRoute,5,解锁科技路线,0,0,1,0
+startKit,6,开局补给倍率,0,1,0,0
+note,7,仅展示说明,0,0,0,1
+final,8,终章曲率引擎就绪,0,0,0,0

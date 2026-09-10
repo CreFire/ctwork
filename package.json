@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "gen:luban": "node scripts/luban-gen.mjs",
+    "gen": "npm run gen:luban",
+    "validate:config": "node scripts/validate-config.mjs"
   },
   "dependencies": {
     "clsx": "2.1.1",

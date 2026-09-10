@@ -1,0 +1,11 @@
+##type = enum
+##file = ResourceType
+##group = c,s
+##brief = 资源类型枚举
+##desc = 包含所有资源类型及all特殊聚合
+#name,value,comment,alias
+energy,0,能量,ENERGY
+material,1,物资,MATERIAL
+research,2,科研,SCIENCE
+special,3,特殊资源(算力/生物质/灵能),SPECIAL
+all,4,全部资源(用于乘区聚合),ALL

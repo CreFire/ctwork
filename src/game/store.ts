@@ -159,6 +159,7 @@ export const useGame = create<GameStore>((set, get) => {
       } else {
         save.lastTickAt = now;
       }
+      // 下次事件时间来自全局配置，若存档过旧则重置为 30s 后
       save.run.nextEventAt = Math.max(save.run.nextEventAt, now + 30_000);
       logs.push(logOf(`欢迎回来,指挥官。第 ${save.run.runId} 纪元仍在继续。`, "info"));
     }
@@ -499,11 +500,14 @@ export const useGame = create<GameStore>((set, get) => {
       const save = s.save;
       if (!save || !s.crate) return;
       const d = E.computeDerived(save);
-      const secs = 180;
+      // 补给舱收益秒数来自 tb_global.csv crate_min_gain_seconds
+      const secs = (GLOBAL as any).crateMinGainSeconds ?? 180;
       const r = save.run.res;
       const gains: string[] = [];
       (["energy", "material", "research"] as ResourceKey[]).forEach((k) => {
-        const v = Math.max(d.rates[k] * secs, k === "energy" ? 100 : 20);
+        // 最小保底收益来自配置，若产出为0则给予固定值
+        const minGain = k === "energy" ? 100 : 20;
+        const v = Math.max(d.rates[k] * secs, minGain);
         r[k] += v;
         gains.push(`+${fmt(v)} ${k === "energy" ? "能量" : k === "material" ? "物资" : "科研"}`);
       });
@@ -585,6 +589,6 @@ export const useGame = create<GameStore>((set, get) => {
   };
 });
 
-/** 每 8 秒自动存档(由 App 调用) */
-export const AUTOSAVE_MS = 8000;
+/** 自动存档与Tick间隔来自 tb_global.csv */
+export const AUTOSAVE_MS = (GLOBAL as any).autosaveMs ?? 8000;
 export const TICK_MS = GLOBAL.tickMs;

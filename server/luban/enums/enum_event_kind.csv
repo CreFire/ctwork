@@ -1,0 +1,8 @@
+##type = enum
+##file = EventKind
+##group = c,s
+##brief = 随机事件种类
+#name,value,comment
+instant,0,瞬时资源结算
+crate,1,漂流补给舱
+deadline,2,倒计时奖励

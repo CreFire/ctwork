@@ -20,10 +20,52 @@
 
 ```bash
 npm install
-npm run dev      # 开发
-npm run build    # 构建(输出单文件 dist/index.html)
-npm run preview  # 预览构建产物
+npm run gen:luban   # 生成 Luban 配置 (首次克隆后必须)
+npm run dev         # 开发
+npm run build       # 构建(输出单文件 dist/index.html)
+npm run preview     # 预览构建产物
+
+# 配置校验
+npm run validate:config
 ```
+
+## Luban 配置系统
+
+本项目已实现完整的 Luban 配置驱动体系，**所有游戏数值均来自 CSV 配置表，拒绝硬编码**：
+
+- **配置表**: `server/luban/tables/*.csv` (12张功能表)
+- **枚举表**: `server/luban/enums/*.csv` (6个枚举)
+- **Bean表**: `server/luban/beans/*.csv` (12个Bean)
+- **全局配置**: `server/luban/luban.conf` (总控)
+- **定义文件**: `server/luban/Defines/*.xml` (枚举/Bean/表定义)
+- **生成产物**: `src/game/generated/` (TS代码 + JSON)
+- **生成器**: `scripts/luban-gen.mjs` (模拟 Luban 官方工具链)
+- **校验器**: `src/game/configValidator.ts` + `scripts/validate-config.mjs`
+
+策划改表流程：
+
+```bash
+# 1. 编辑 CSV，例如 server/luban/tables/tb_building.csv
+# 2. 生成
+npm run gen:luban
+# 3. 校验
+npm run validate:config
+# 4. 前后端自动生效
+```
+
+详见：
+
+- `server/luban/README.md` - 快速开始
+- `docs/LUBAN_CONFIG.md` - 完整文档
+- `docs/ARCHITECTURE.md` §3 - 架构中的配置方案
+
+### 健壮性设计
+
+- **三层校验**: CSV解析 → 业务校验 → 运行时回退
+- **默认值回退**: 配置缺失时使用内嵌默认值，游戏不崩溃
+- **范围钳制**: 非法值自动修正并警告
+- **重复ID检测**: 生成与校验时均检查
+- **热更支持**: `configLoader.ts` 支持远程 JSON 加载
 
 ## 账号体系
 
@@ -36,16 +78,33 @@ npm run preview  # 预览构建产物
 ```
 src/
 ├── game/
-│   ├── config.ts    # 全部游戏配置表(与 Luban 表结构对齐,可被生成物直接替换)
-│   ├── engine.ts    # 纯函数引擎:产出/成本/离线/轮回奖励(服务端同公式)
-│   ├── store.ts     # Zustand 中枢:tick/购买/研究/路线/发射/事件/自动存档
-│   ├── fmt.ts       # 中文大数格式化(万/亿/京…)
-│   └── sound.ts     # WebAudio 合成音效
+│   ├── config.ts              # 配置入口：导入生成表 + 校验 + 回退 (Luban驱动)
+│   ├── configValidator.ts     # 配置校验层：范围检查、枚举合法性、重复ID
+│   ├── configLoader.ts        # 配置加载器：支持远程热更与缓存
+│   ├── generated/             # Luban 生成产物 (不要手动编辑)
+│   │   ├── Enums.ts           # 枚举定义
+│   │   ├── Beans.ts           # Bean 接口
+│   │   ├── Tables.ts          # 表数据常量
+│   │   └── data/tables.json   # JSON 数据
+│   ├── engine.ts              # 纯函数引擎:产出/成本/离线/轮回奖励(服务端同公式,数值来自GLOBAL)
+│   ├── store.ts               # Zustand 中枢:tick/购买/研究/路线/发射/事件/自动存档
+│   ├── fmt.ts                 # 中文大数格式化(万/亿/京…)
+│   └── sound.ts               # WebAudio 合成音效
 ├── services/
-│   └── mockServer.ts  # 模拟后端(登录即注册/存档读写/会话),对应 dueGame 协议
-├── components/        # 认证 / HUD / 六个玩法页 / 过场动画 / 画布(星空/地球)
-docs/ARCHITECTURE.md   # 后端蓝图:dueGame + Go + MongoDB、协议、反作弊、PvE 路线图
-server/luban/          # Luban 配置表样例(tb_global / tb_building)
+│   └── mockServer.ts          # 模拟后端(登录即注册/存档读写/会话),对应 dueGame 协议
+├── components/                # 认证 / HUD / 六个玩法页 / 过场动画 / 画布(星空/地球)
+scripts/
+├── luban-gen.mjs              # Luban 生成器：解析CSV → 生成TS/Go/JSON
+└── validate-config.mjs        # 配置校验脚本：检查重复ID、范围、缺失文件
+docs/
+├── ARCHITECTURE.md            # 后端蓝图 + Luban 配置体系
+└── LUBAN_CONFIG.md            # Luban 完整文档
+server/luban/                  # Luban 配置中心
+├── luban.conf                 # 全局配置：表清单、生成目标、校验规则
+├── Defines/                   # XML 定义：__enums__.xml, __beans__.xml, __tables__.xml
+├── enums/                     # 枚举表 (6个)
+├── beans/                     # Bean表 (12个)
+└── tables/                    # 数据表 (12张功能表 + 名字库)
 ```
 
 ## 后端(dueGame · Go · MongoDB)

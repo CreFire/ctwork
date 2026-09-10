@@ -1,0 +1,10 @@
+##type = bean
+##file = Cost
+##group = c,s
+##brief = 资源消耗结构(多资源可选)
+##comment = 用于建筑/科技的复合消耗，字段均可选，缺省为0
+#name,type,comment,required,default
+energy,int?,能量消耗,0,0
+material,int?,物资消耗,0,0
+research,int?,科研消耗,0,0
+special,int?,特殊资源消耗,0,0

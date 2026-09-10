@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 基础Bean: 资源消耗 -->
+  <bean name="Cost" comment="资源消耗结构">
+    <var name="energy" type="int?" comment="能量"/>
+    <var name="material" type="int?" comment="物资"/>
+    <var name="research" type="int?" comment="科研"/>
+    <var name="special" type="int?" comment="特殊"/>
+  </bean>
+
+  <!-- 效果Bean -->
+  <bean name="Effect" comment="效果定义">
+    <var name="k" type="EffectKind" comment="效果类型"/>
+    <var name="res" type="ResourceType?" comment="资源类型"/>
+    <var name="v" type="float?" comment="数值"/>
+    <var name="route" type="RouteId?" comment="路线ID"/>
+    <var name="text" type="string?" comment="文本"/>
+  </bean>
+
+  <!-- 建筑 -->
+  <bean name="Building" comment="建筑定义">
+    <var name="id" type="string"/>
+    <var name="name" type="string"/>
+    <var name="en" type="string"/>
+    <var name="chain" type="ChainType"/>
+    <var name="desc" type="string"/>
+    <var name="baseCost" type="Cost"/>
+    <var name="scale" type="float"/>
+    <var name="produces" type="ResourceType"/>
+    <var name="perSec" type="float"/>
+    <var name="unlockResearch" type="string?"/>
+    <var name="unlockRoute" type="RouteId?"/>
+  </bean>
+
+  <!-- 点击升级 -->
+  <bean name="ClickUpgrade" comment="点击升级">
+    <var name="id" type="string"/>
+    <var name="name" type="string"/>
+    <var name="desc" type="string"/>
+    <var name="baseCost" type="int"/>
+    <var name="scale" type="float"/>
+    <var name="max" type="int"/>
+    <var name="effect" type="Effect"/>
+    <var name="perText" type="string"/>
+  </bean>
+
+  <!-- 纪元 -->
+  <bean name="Era" comment="纪元">
+    <var name="id" type="int"/>
+    <var name="name" type="string"/>
+    <var name="en" type="string"/>
+    <var name="flavor" type="string"/>
+  </bean>
+
+  <!-- 科技 -->
+  <bean name="Research" comment="科技树节点">
+    <var name="id" type="string"/>
+    <var name="name" type="string"/>
+    <var name="desc" type="string"/>
+    <var name="quote" type="string?"/>
+    <var name="era" type="int"/>
+    <var name="cost" type="Cost"/>
+    <var name="req" type="list,string?"/>
+    <var name="effects" type="list,Effect?"/>
+  </bean>
+
+  <!-- 路线 -->
+  <bean name="Route" comment="飞升路线">
+    <var name="id" type="RouteId"/>
+    <var name="name" type="string"/>
+    <var name="title" type="string"/>
+    <var name="en" type="string"/>
+    <var name="desc" type="string"/>
+    <var name="perks" type="list,string"/>
+    <var name="specialName" type="string"/>
+    <var name="specialEn" type="string"/>
+    <var name="requireResearch" type="string"/>
+  </bean>
+
+  <!-- 路线升级 -->
+  <bean name="RouteUpgrade" comment="路线升级">
+    <var name="id" type="string"/>
+    <var name="route" type="RouteId"/>
+    <var name="name" type="string"/>
+    <var name="desc" type="string"/>
+    <var name="max" type="int"/>
+    <var name="baseCost" type="int"/>
+    <var name="scale" type="float"/>
+    <var name="effect" type="Effect"/>
+  </bean>
+
+  <!-- 星核遗产 -->
+  <bean name="CoreUpgrade" comment="星核遗产">
+    <var name="id" type="string"/>
+    <var name="name" type="string"/>
+    <var name="desc" type="string"/>
+    <var name="max" type="int"/>
+    <var name="base" type="int"/>
+    <var name="inc" type="int"/>
+    <var name="effectPer" type="Effect"/>
+  </bean>
+
+  <!-- 剧情事件 -->
+  <bean name="StoryEvent" comment="倒计时剧情">
+    <var name="id" type="string"/>
+    <var name="remainSec" type="int"/>
+    <var name="text" type="string"/>
+    <var name="tone" type="EventTone"/>
+  </bean>
+
+  <!-- 随机事件 -->
+  <bean name="RandomEvent" comment="随机事件">
+    <var name="id" type="string"/>
+    <var name="name" type="string"/>
+    <var name="text" type="string"/>
+    <var name="tone" type="EventTone"/>
+    <var name="kind" type="EventKind"/>
+    <var name="res" type="ResourceType?"/>
+    <var name="seconds" type="int?"/>
+    <var name="deadlineAdd" type="int?"/>
+    <var name="weight" type="int?"/>
+  </bean>
+
+  <!-- 资源元信息 -->
+  <bean name="ResMeta" comment="资源元信息">
+    <var name="id" type="ResourceType"/>
+    <var name="name" type="string"/>
+    <var name="en" type="string"/>
+    <var name="color" type="string"/>
+  </bean>
+
+  <!-- 全局配置单例 -->
+  <bean name="GlobalConfig" comment="全局配置KV">
+    <var name="key" type="string"/>
+    <var name="value" type="string"/>
+    <var name="comment" type="string?"/>
+  </bean>
+</root>

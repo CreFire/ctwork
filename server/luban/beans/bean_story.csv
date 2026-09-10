@@ -1,0 +1,9 @@
+##type = bean
+##file = StoryEvent
+##group = c,s
+##brief = 倒计时剧情事件
+#name,type,comment,required
+id,string,唯一ID,1
+remainSec,int,剩余秒阈值触发,1
+text,string,剧情文本,1
+tone,EventTone,语气,1
