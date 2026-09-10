@@ -1,0 +1,34 @@
+##type = table
+##file = GlobalTable
+##group = c,s
+##brief = 全局参数表(单例 key-value)
+##mode = map
+##key = key
+##comment = 所有可调全局数值均在此表，支持热更
+#key,value,comment,type,group
+version,1,配置版本号,int,"c,s"
+earth_countdown_seconds,3600,每轮地球解体倒计时(秒),int,"c,s"
+offline_cap_hours,8,离线收益上限(小时),int,"c,s"
+offline_efficiency,0.5,离线收益效率,float,"c,s"
+click_base_power,1,基础点击产出,int,"c,s"
+crit_mult,5,暴击倍率,float,"c,s"
+milestone_every,25,建筑里程碑步长,int,"c,s"
+milestone_mult,2,里程碑倍率,float,"c,s"
+launch_energy_req,250000,发射所需能量,int,"c,s"
+launch_material_req,25000,发射所需物资,int,"c,s"
+tick_ms,250,结算帧间隔ms,int,"c,s"
+autosave_ms,8000,自动存档间隔ms,int,"c,s"
+reward_base,3,逃生保底星核,int,"c,s"
+event_min_gap,170,随机事件最小间隔秒,int,"c,s"
+event_max_gap,400,随机事件最大间隔秒,int,"c,s"
+first_event_delay_seconds,150,首个随机事件延迟秒,int,"c,s"
+crate_life_seconds,45,补给舱可回收窗口秒,int,"c,s"
+crate_min_gain_seconds,180,补给舱折算最小秒数,int,"c,s"
+kit_energy_per_level,4000,开局补给每级能量,int,"c,s"
+kit_material_per_level,150,开局补给每级物资,int,"c,s"
+kit_research_per_level,20,开局补给每级科研,int,"c,s"
+anchor_bonus_seconds,600,时空之锚每级增加秒,int,"c,s"
+reward_time_divisor,600,星核时间奖励除数(秒),int,"c,s"
+reward_prod_divisor,1000000,星核产能奖励除数,int,"c,s"
+max_crit_rate,0.95,暴击率上限,float,"c,s"
+max_offline_seconds,28800,离线最大秒数(8h),int,"c,s"

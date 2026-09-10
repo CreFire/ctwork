@@ -1,0 +1,23 @@
+##type = table
+##file = BuildingTable
+##group = c,s
+##brief = 建筑配置表
+##mode = map
+##key = id
+#id,name,en,desc,chain,base_energy,base_material,base_research,base_special,scale,produces,per_sec,unlock_research,unlock_route
+b_solar,太阳能阵列,SOLAR ARRAY,危机纪元最可靠的第一缕光。,energy,15,,,,1.15,energy,0.5,,
+b_fossil,化石电站,FOSSIL PLANT,"烧掉旧世界的遗产,换取最后一程。",energy,110,12,,,1.15,energy,3,,
+b_fission,裂变电站,FISSION PLANT,"铀燃料棒彻夜咆哮,如同文明的喘息。",energy,2400,120,,,1.16,energy,16,r_nuclear,
+b_fusion,聚变反应堆,FUSION REACTOR,在海水中点燃太阳。,energy,36000,900,,,1.17,energy,120,r_fusion,
+b_antimatter,反物质堆,ANTIMATTER CORE,"一克湮灭,一座城市的一年。",energy,520000,7000,,,1.18,energy,950,r_antimatter,
+b_zero,零点引擎,ZERO-POINT DRIVE,"从真空本身榨取能量,神明般的技术。",energy,6500000,55000,,,1.18,energy,8000,r_vacuum,
+b_scavenge,拾荒者小队,SCAVENGERS,在秩序崩解的城市里回收文明的残骸。,material,40,,,,1.15,material,0.5,,
+b_mine,纳米矿机,NANO MINER,成群的纳米虫将岩层啃噬成可用元素。,material,1800,100,,,1.16,material,5,r_nano,
+b_smelter,轨道熔炼厂,ORBITAL FOUNDRY,小行星带成了人类的露天矿场。,material,30000,800,,,1.17,material,42,r_orbital,
+b_molecular,分子重构炉,MOLECULAR FORGE,"垃圾进,合金出。物质只是排列的艺术。",material,480000,9000,,,1.18,material,360,r_molecular,
+b_study,临时研究组,THINK TANK,避难所里亮到深夜的灯。,research,,60,,,1.15,research,0.3,,
+b_lab,综合实验室,MEGA LAB,"人类最后的十五年教育,浓缩于此。",research,2000,700,,,1.16,research,2.2,r_automation,
+b_quantum,量子超算,QUANTUM CORE,"一纳秒的推演,胜过学者一生。",research,30000,8500,,,1.17,research,16,r_ai,
+b_datacore,数据核心,DATA CORE,机械路线:源源不断地产出「算力」。,special,20000,3000,,,1.16,special,1.2,,machine
+b_spire,孵化尖塔,HATCHERY SPIRE,蜂群路线:溫热地表下产出「生物质」。,special,20000,3000,,,1.16,special,1.2,,swarm
+b_monolith,灵能方碑,PSION MONOLITH,灵能路线:静默石碑汇聚「灵能」。,special,20000,3000,,,1.16,special,1.2,,psionic

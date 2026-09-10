@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 全局表：单例KV，key为索引 -->
+  <table name="tb_global" valueType="GlobalConfig" mode="map" input="tb_global.csv" group="c,s" comment="全局常量表">
+    <index name="key"/>
+  </table>
+
+  <table name="tb_building" valueType="Building" mode="map" input="tb_building.csv" group="c,s" comment="建筑表">
+    <index name="id"/>
+  </table>
+
+  <table name="tb_click_upgrade" valueType="ClickUpgrade" mode="map" input="tb_click_upgrade.csv" group="c,s" comment="点击升级表">
+    <index name="id"/>
+  </table>
+
+  <table name="tb_era" valueType="Era" mode="list" input="tb_era.csv" group="c,s" comment="纪元表"/>
+
+  <table name="tb_research" valueType="Research" mode="map" input="tb_research.csv" group="c,s" comment="科技树">
+    <index name="id"/>
+  </table>
+
+  <table name="tb_route" valueType="Route" mode="map" input="tb_route.csv" group="c,s" comment="飞升路线">
+    <index name="id"/>
+  </table>
+
+  <table name="tb_route_upgrade" valueType="RouteUpgrade" mode="map" input="tb_route_upgrade.csv" group="c,s" comment="路线升级">
+    <index name="id"/>
+  </table>
+
+  <table name="tb_core_upgrade" valueType="CoreUpgrade" mode="map" input="tb_core_upgrade.csv" group="c,s" comment="星核遗产">
+    <index name="id"/>
+  </table>
+
+  <table name="tb_story" valueType="StoryEvent" mode="list" input="tb_story.csv" group="c,s" comment="倒计时剧情"/>
+
+  <table name="tb_random_event" valueType="RandomEvent" mode="map" input="tb_random_event.csv" group="c,s" comment="随机事件">
+    <index name="id"/>
+  </table>
+
+  <table name="tb_res_meta" valueType="ResMeta" mode="map" input="tb_res_meta.csv" group="c" comment="资源元信息">
+    <index name="id"/>
+  </table>
+
+  <table name="tb_leaderboard_name" valueType="string" mode="list" input="tb_leaderboard_name.csv" group="c" comment="排行榜名字库"/>
+</root>

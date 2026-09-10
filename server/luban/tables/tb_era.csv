@@ -1,0 +1,12 @@
+##type = table
+##file = EraTable
+##group = c,s
+##brief = 纪元定义表
+##mode = list
+#id,name,en,flavor
+0,危机纪元,ERA OF CRISIS,"倒计时开始,人类第一次为同一个目标工作。"
+1,重整纪元,RECONSTRUCTION,"秩序崩塌之后,工程师成为新的祭司。"
+2,环轨纪元,ORBITAL AGE,"我们的目光越过云层,落在轨道之上。"
+3,飞升前夜,EVE OF ASCENSION,"物种的定义,第一次由我们自己改写。"
+4,深空纪元,DEEP SPACE,物理学最后一页写着:此路可通群星。
+5,终章,FINALE,"文明的门票,只留给跑得最快的孩子。"

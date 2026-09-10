@@ -1,0 +1,10 @@
+##type = enum
+##file = EventTone
+##group = c,s
+##brief = 事件语气/颜色类型
+#name,value,comment,color
+info,0,信息,#94a3b8
+success,1,成功/增益,#4ade80
+warn,2,警告,#f59e0b
+danger,3,危险/损失,#f87171
+story,4,剧情播报,#a78bfa

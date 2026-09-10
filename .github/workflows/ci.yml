@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # ---------- 配置链路 + 前端(无需 Go 工具链) ----------
+  config-web:
+    name: 配置生成 / 校验 / 一致性 / 前端构建
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: 由 Luban CSV 生成双端配置
+        run: npm run gen:luban
+
+      - name: 生成物必须已入库且未过期(CSV 改了就要重新生成)
+        run: git diff --exit-code -- src/game/generated server/internal/config/gen server/data/tables.json
+
+      - name: 表结构与数值范围校验
+        run: npm run validate:config
+
+      - name: Luban 表 ⇄ Go 权威数值表 一致性
+        run: npm run check:parity
+
+      - name: TypeScript 类型检查
+        run: npm run typecheck
+
+      - name: 引擎闭环冒烟
+        run: npm run smoke
+
+      - name: 前端构建(单文件 dist/index.html)
+        run: npm run build
+
+  # ---------- Go 后端 + TS↔Go 双端公式一致性 ----------
+  server:
+    name: Go 构建 / 测试 / 双端一致性
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: 用 TS 引擎重新生成 fixture
+        run: npm run fixture
+
+      - name: fixture 必须与当前 TS 引擎一致(否则双端公式已漂移)
+        run: git diff --exit-code -- server/internal/engine/testdata/fixture.json
+
+      - name: go build
+        working-directory: server
+        run: go build ./...
+
+      - name: go vet
+        working-directory: server
+        run: go vet ./...
+
+      - name: go test(含 TS↔Go 逐字段比对)
+        working-directory: server
+        run: go test ./...
+
+  # ---------- 端到端:起真实单进程服务跑接口脚本 ----------
+  e2e:
+    name: 端到端接口(前端产物 + Go 网关)
+    runs-on: ubuntu-latest
+    needs: [config-web, server]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+
+      - name: 编译后端
+        working-directory: server
+        run: go build -o bin/ctwork-server ./cmd/server
+
+      - name: 启动单进程服务(静态 + API 同端口)
+        run: |
+          ARK_ADDR=127.0.0.1:8090 ./server/bin/ctwork-server &
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8090/healthz >/dev/null && break
+            sleep 1
+          done
+
+      - name: 跑接口端到端脚本
+        run: python3 scripts/e2e.py

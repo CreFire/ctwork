@@ -173,7 +173,7 @@ export function computeDerived(save: SaveState): Derived {
     clickPower,
     autoClicks: acc.autoClick,
     autoRate,
-    crit: Math.min(acc.crit, 0.95),
+    crit: Math.min(acc.crit, GLOBAL.maxCritRate ?? 0.95), // 上限来自 tb_global.max_crit_rate
   };
 }
 
@@ -236,7 +236,7 @@ export function newMeta(): MetaState {
 
 export function countdownBonus(meta: MetaState): number {
   const lvl = meta.coreUp["cu_anchor"] ?? 0;
-  return lvl * 600;
+  return lvl * (GLOBAL.anchorBonusSeconds ?? 600); // 每级加成秒数来自 tb_global.anchor_bonus_seconds
 }
 
 export function newRun(runId: number, meta: MetaState, now: number): RunState {
@@ -244,9 +244,10 @@ export function newRun(runId: number, meta: MetaState, now: number): RunState {
   const res = emptyRes();
   const kit = meta.coreUp["cu_seeder"] ?? 0;
   if (kit > 0) {
-    res.energy = 4000 * kit;
-    res.material = 150 * kit;
-    res.research = 20 * kit;
+    // 开局补给每级数值来自 tb_global.kit_*_per_level
+    res.energy = (GLOBAL.kitEnergyPerLevel ?? 4000) * kit;
+    res.material = (GLOBAL.kitMaterialPerLevel ?? 150) * kit;
+    res.research = (GLOBAL.kitResearchPerLevel ?? 20) * kit;
   }
   return {
     runId,
@@ -259,7 +260,7 @@ export function newRun(runId: number, meta: MetaState, now: number): RunState {
     clickUp: {},
     routeUp: {},
     firedStories: [],
-    nextEventAt: now + 150_000,
+    nextEventAt: now + (GLOBAL.firstEventDelaySeconds ?? 150) * 1000, // 首个事件延迟来自 tb_global.first_event_delay_seconds
     stats: { energyTotal: 0, clicks: 0 },
   };
 }
@@ -329,11 +330,11 @@ export interface RewardBreakdown {
 
 export function computeReward(save: SaveState, escaped: boolean, now: number): RewardBreakdown {
   const produced = Math.max(0, save.run.stats.energyTotal);
-  const prodPart = Math.floor(Math.sqrt(produced / 1e6));
+  const prodPart = Math.floor(Math.sqrt(produced / (GLOBAL.rewardProdDivisor ?? 1_000_000)));
   const remainSec = Math.max(0, (save.run.deadlineAt - now) / 1000);
   if (escaped) {
     const base = GLOBAL.rewardBase;
-    const time = Math.floor(remainSec / 600);
+    const time = Math.floor(remainSec / (GLOBAL.rewardTimeDivisor ?? 600));
     return { base, production: prodPart, time, total: base + prodPart + time, escaped: true };
   }
   const total = 1 + Math.floor(prodPart / 2);

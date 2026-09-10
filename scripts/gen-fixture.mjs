@@ -11,6 +11,7 @@
  */
 import { build } from "esbuild";
 import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -114,7 +115,6 @@ const costs = [
 ];
 
 const fixture = {
-  generatedAt: new Date().toISOString(),
   engine: "src/game/engine.ts",
   cases,
   offline: { save: offSnapshot, now: offNow, lastTickAt: t0, gains: offRes.gains, seconds: offRes.seconds },
@@ -124,6 +124,10 @@ const fixture = {
   ],
   costs,
 };
+
+// 内容指纹代替时间戳:同样的引擎与配置必然产出同样的 fixture,
+// CI 可用 `git diff --exit-code` 判断 fixture 是否已随 TS 引擎更新。
+fixture.sourceHash = createHash("sha256").update(JSON.stringify(fixture)).digest("hex").slice(0, 12);
 
 mkdirSync("server/internal/engine/testdata", { recursive: true });
 writeFileSync("server/internal/engine/testdata/fixture.json", JSON.stringify(fixture, null, 1));

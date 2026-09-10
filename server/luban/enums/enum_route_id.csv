@@ -1,0 +1,8 @@
+##type = enum
+##file = RouteId
+##group = c,s
+##brief = 飞升路线ID枚举
+#name,value,comment,specialName,specialEn
+machine,0,机械飞升-钢铁洪流,算力,COMPUTE
+swarm,1,蜂群意志-虫群之心,生物质,BIOMASS
+psionic,2,灵能升华-虚空回响,灵能,PSION

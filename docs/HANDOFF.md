@@ -38,6 +38,8 @@
 | 12 | 本地 Git 仓库初始化 | `git init` + 首次提交 | ✅ |
 | 13 | dueGame 后端 v0.1(五接口/反作弊/双端一致性/真排行榜) | `server/` 全套 + `scripts/gen-fixture.mjs` + `scripts/e2e.py` | ✅ |
 | 14 | 文明编年史/墓碑/快照(RunRecord 落笔、墓志铭、现状总览) | `src/components/game/ChronicleTab.tsx` + engine/store/Go 同步 | ✅ |
+| 15 | Luban 配置驱动体系(12 表 / 6 枚举 / 12 Bean + 生成器 + 校验器) | `server/luban/**` + `scripts/luban-gen.mjs` + `src/game/generated/**` | ✅ |
+| 16 | 双分支合并:配置单源化 + 一致性守卫 + 冒烟/CI | `scripts/check-config-parity.mjs` + `scripts/smoke-engine.mjs` + `.github/workflows/ci.yml` | ✅ |
 
 **待办(接手从这里开始)**
 
@@ -46,7 +48,11 @@
       → 已实现于 `server/`(Go 单进程网关:auth/player/league + JWT + 限流 + 反作弊校验,
         存储 filestore 默认 / mongostore 可选;双端公式一致性由 `scripts/gen-fixture.mjs`
         + `server/internal/engine/engine_test.go` 保证)
-- [ ] Luban 工程化:Excel 表 + `gen` 导出 Go/TS,替换 `src/game/config.ts` 与 `server/internal/engine/config.go`
+- [x] Luban 工程化:CSV 表 + `npm run gen` 导出 TS/Go/JSON,`src/game/config.ts` 已改为读生成表
+      → 前端数值 100% 来自 `server/luban/tables/*.csv`(经 `configValidator` 校验/钳制/回退),
+        并用 `scripts/gen-fixture.mjs` 验证迁移前后引擎输出逐字段一致(仅新增 `first_event_delay_seconds` 配置项)
+- [ ] Luban 收尾:让 `server/internal/engine/config.go` 直接消费 `server/internal/config/gen`
+      (当前为手写字面量,由 `npm run check:parity` 强制与 CSV 一致;删掉手写字面量即完成单源)
 - [x] 服务端权威校验:资源增量上限、购买重算(反作弊 v0.1 已实现,见 README)
 - [ ] v0.2:WebSocket 长连接、服务端离线结算、赛季
 - [ ] v0.3:联机 PvE「流浪黑洞」讨伐

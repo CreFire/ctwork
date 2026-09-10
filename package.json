@@ -6,7 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "gen:luban": "node scripts/luban-gen.mjs",
+    "gen": "npm run gen:luban",
+    "validate:config": "node scripts/validate-config.mjs",
+    "fixture": "node scripts/gen-fixture.mjs",
+    "smoke": "node scripts/smoke-engine.mjs",
+    "check:parity": "node scripts/check-config-parity.mjs",
+    "check": "npm run gen:luban && npm run validate:config && npm run check:parity && npm run typecheck && npm run smoke"
   },
   "dependencies": {
     "clsx": "2.1.1",

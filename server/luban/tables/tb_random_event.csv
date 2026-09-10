@@ -1,0 +1,13 @@
+##type = table
+##file = RandomEventTable
+##group = c,s
+##brief = 随机事件表
+##mode = map
+##key = id
+#id,name,text,tone,kind,res,seconds,deadlineAdd,weight
+ev_solar,太阳风暴,"强烈的太阳风掠过轨道阵列,充能效率暴涨。",success,instant,energy,90,,30
+ev_debris,彗星残骸带,冰质彗尾携带着大量可用元素经过近地轨道。,success,instant,material,120,,25
+ev_signal,深空信号,"捕捉到一段规律的脉冲信号,研究组连夜完成了解密推演。",success,instant,research,90,,25
+ev_sling,引力弹弓,领航组利用天体引力意外争取到宝贵时间。,info,deadline,,,120,15
+ev_crate,漂流补给舱,一个冷战时期的补给舱漂入雷达范围——快去回收!,success,crate,,,,10
+ev_raiders,轨道流寇,"流寇编队试图靠近储存区,被防御系统驱离。",warn,instant,energy,-45,,15

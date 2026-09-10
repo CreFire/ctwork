@@ -21,7 +21,7 @@
 
 ```bash
 # 0) 前置:Go 1.27+ 与 Node 20+
-# 1) 构建前端单文件 + 编译后端
+# 1) 构建前端单文件 + 编译后端(Luban 生成物已入库,仅改表后需 npm run gen)
 npm install && npm run build          # 产出 dist/
 cd server && go mod tidy && go build -o bin/ctwork-server ./cmd/server && cd ..
 
@@ -82,32 +82,64 @@ Docker 一键起 MongoDB + 服务端:`docker compose up -d --build` → http://l
 ```
 src/                        # 前端(React19 + Vite + Tailwind4 + Zustand)
 ├── game/
-│   ├── config.ts    # 全部游戏配置表(与 Luban 表结构对齐)
-│   ├── engine.ts    # 纯函数引擎:产出/成本/离线/轮回奖励(与服务端同公式)
-│   ├── store.ts     # Zustand 中枢:tick/购买/研究/路线/发射/事件/自动存档
+│   ├── config.ts          # 配置入口:读生成表 + 运行时校验 + 回退
+│   ├── configValidator.ts # 配置校验层:范围钳制/枚举合法性/重复 ID
+│   ├── configLoader.ts    # 配置加载器:远程 JSON 热更与缓存
+│   ├── generated/         # Luban 生成物(勿手改):Enums/Beans/Tables + data/tables.json
+│   ├── engine.ts          # 纯函数引擎:产出/成本/离线/轮回奖励(与服务端同公式)
+│   ├── store.ts           # Zustand 中枢:tick/购买/研究/路线/发射/事件/自动存档
 │   ├── fmt.ts / sound.ts
 ├── services/
 │   ├── serverClient.ts  # 正式后端 HTTP 客户端(默认)
 │   └── mockServer.ts    # 模拟后端(VITE_USE_MOCK=1 时启用)
-├── components/          # 认证 / HUD / 六个玩法页 / 过场动画 / 画布
+├── components/          # 认证 / HUD / 七个玩法页(含文明编年史)/ 过场动画 / 画布
 server/                   # 后端(dueGame 风格)
 ├── cmd/server/main.go    # 入口:单进程网关
 ├── internal/
 │   ├── gate/             # HTTP 接入:路由/JWT/限流/CORS/静态托管
 │   ├── module/           # 账号:登录即注册 + bcrypt + JWT
 │   ├── engine/           # 服务端权威公式 + 反作弊校验 + 双端一致性测试
+│   ├── config/gen/       # Luban 导出的 Go 表(生成物)
 │   └── store/            # filestore(默认)/ mongostore(生产)
-├── luban/                # Luban 配置表样例(tb_global / tb_building)
-scripts/gen-fixture.mjs   # TS↔Go 数值一致性 fixture 生成器
-docs/ARCHITECTURE.md      # 总体架构(协议/反作弊/PvE 路线图)
+├── luban/                # Luban 配置中心:luban.conf / Defines / enums / beans / tables
+└── data/tables.json      # Luban 导出的服务端 JSON(生成物)
+scripts/
+├── luban-gen.mjs           # Luban 生成器:CSV → TS + Go + JSON
+├── validate-config.mjs     # 表结构与数值范围校验
+├── check-config-parity.mjs # Luban 表 ⇄ Go 权威表一致性守卫
+├── smoke-engine.mjs        # 引擎闭环冒烟(Node 真实执行 config+engine)
+├── gen-fixture.mjs         # TS↔Go 数值一致性 fixture 生成器
+└── e2e.py                  # 接口端到端脚本
+docs/ARCHITECTURE.md      # 总体架构(协议/反作弊/Luban/PvE 路线图)
+docs/LUBAN_CONFIG.md      # Luban 配置体系完整文档
 docs/HANDOFF.md           # 任务交接/复现说明
 ```
 
-## 配置(Luban)
+## 配置(Luban · 已落地)
 
-`src/game/config.ts` 为客户端表的手写等价版,字段命名与 bean 一致;
-表样例见 `server/luban/*.csv`(tb_global / tb_building)。
-接入 Luban 后由生成物直接替换双端配置,引擎层零改动。
+数值唯一来源是 `server/luban/tables/*.csv`(12 张表 + 6 枚举 + 12 Bean),
+`scripts/luban-gen.mjs` 一键导出双端产物:
+
+```
+CSV(策划) → luban-gen.mjs ┬→ src/game/generated/{Enums,Beans,Tables}.ts + data/tables.json  (前端)
+                          ├→ server/internal/config/gen/tables_gen.go                        (后端 Go)
+                          └→ server/data/tables.json                                         (服务端 JSON)
+```
+
+```bash
+npm run gen:luban        # 改表后生成(生成物已入库,克隆后无需执行)
+npm run validate:config  # 表结构 / 数值范围 / 重复 ID 校验
+npm run check:parity     # Luban 表 ⇄ server/internal/engine/config.go 一致性守卫
+npm run smoke            # 引擎闭环冒烟(配置装载 → 建造 → 离线 → 结算 → 编年史)
+npm run check            # 以上四步 + tsc 类型检查
+```
+
+- 前端 `src/game/config.ts` 只读生成表,并经 `configValidator.ts` 做运行时校验/钳制/回退;
+  引擎层(`engine.ts` / `store.ts`)不感知数值来源。
+- 服务端反作弊引擎 `server/internal/engine/config.go` 目前是手写字面量,
+  由 `check:parity` 强制与 CSV 逐项相等(改表未同步会直接报错);
+  下一步是让 `config.go` 直接消费 `internal/config/gen`,见 `docs/HANDOFF.md`。
+- 详见 `docs/LUBAN_CONFIG.md` 与 `server/luban/README.md`。
 
 ## 路线图
 

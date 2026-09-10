@@ -1,0 +1,9 @@
+##type = bean
+##file = Era
+##group = c,s
+##brief = 纪元定义
+#name,type,comment,required
+id,int,纪元ID(0-5),1
+name,string,中文名,1
+en,string,英文名,1
+flavor,string,风味文本,1

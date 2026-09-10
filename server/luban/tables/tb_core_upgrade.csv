@@ -1,0 +1,12 @@
+##type = table
+##file = CoreUpgradeTable
+##group = c,s
+##brief = 星核遗产表跨轮回永久生效
+##mode = map
+##key = id
+#id,name,desc,max,base,inc,effect_k,effect_res,effect_v
+cu_ember,永恒火种,"每一轮回,能量产出 ×1.3 / 级",20,6,4,mult,energy,1.3
+cu_forge,永恒铸炉,"每一轮回,物资产出 ×1.3 / 级",20,6,4,mult,material,1.3
+cu_palace,记忆宫殿,"每一轮回,科研产出 ×1.25 / 级",20,6,4,mult,research,1.25
+cu_anchor,时空之锚,"每一轮回,地球倒计时 +10分钟 / 级",10,8,6,countdown,,600
+cu_seeder,文明火种库,每轮回开局即携带补给(能量/物资/科研),15,4,3,startKit,,1

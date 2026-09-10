@@ -1,0 +1,23 @@
+##type = table
+##file = ResearchTable
+##group = c,s
+##brief = 科技树表
+##mode = map
+##key = id
+#id,name,desc,quote,era,cost_energy,cost_material,cost_research,cost_special,req,effects
+r_command,危机统筹,"建立全球联合指挥部,一切产出提升。",,0,,,6,,,mult:all:1.2
+r_survival,配给制工业,"每一份物资都被计算,物资产出提升。",,0,,40,25,,r_command,mult:material:1.6
+r_solar2,轨道光伏增效,"展开十万面光伏帆,能量产出提升。",,1,,,50,,r_command,mult:energy:1.5
+r_nuclear,核能复兴,"重启被封存的裂变技术,解锁裂变电站。",,1,,150,130,,r_survival|r_solar2,mult:energy:1.2
+r_automation,全自动产线,"机器制造机器,解锁综合实验室。",,1,,260,220,,r_survival,mult:research:1.3
+r_nano,纳米冶金,"从原子层面重组材料,解锁纳米矿机。",,2,,700,520,,r_automation,note:解锁建筑「纳米矿机」
+r_orbital,轨道电梯,"从赤道直通同步轨道,解锁轨道熔炼厂。",,2,,1400,950,,r_nano,mult:material:1.5
+r_ai,强人工智能,"它诞生的第一句话是:「计算完毕,人类尚有希望。」解锁量子超算与机械路线的钥匙。",,2,,2200,1700,,r_automation|r_nuclear,mult:research:2|enableRoute:machine
+r_gene,基因飞升,"改写生命的底层代码,解锁蜂群路线。","如果躯体是牢笼,那就再造一副。",3,,4000,3200,,r_ai,enableRoute:swarm
+r_psy,意识解码,"证明意识可以脱离肉体存在,解锁灵能路线。","我们向内看,看见了宇宙。",3,,4200,3400,,r_ai,enableRoute:psionic
+r_fusion,受控核聚变,"驯服恒星之火,解锁聚变反应堆。",,3,,3000,2600,,r_orbital,mult:energy:2|note:解锁建筑「聚变反应堆」
+r_antimatter,反物质约束,"在磁瓶中囚禁湮灭,解锁反物质堆。",,4,,14000,12000,,r_fusion,mult:all:1.3
+r_molecular,分子编程,"物质即信息,解锁分子重构炉。",,4,,24000,21000,,r_antimatter,mult:material:2
+r_warp,曲率理论,空间可以被折叠——方舟计划由此成立。,"这艘船不飞向远方,它让远方来到面前。",4,,70000,55000,,r_antimatter,note:方舟计划最终理论完成
+r_vacuum,真空零点能,"向虚空借债,解锁零点引擎。",,5,,150000,120000,,r_molecular,mult:energy:2
+r_engine,曲率引擎,"终章之作。建成后,方舟随时可以点火逃离。",为时未晚。,5,,110000,90000,,r_warp,final

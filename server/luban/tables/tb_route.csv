@@ -1,0 +1,10 @@
+##type = table
+##file = RouteTable
+##group = c,s
+##brief = 飞升路线表
+##mode = map
+##key = id
+#id,name,title,en,desc,perks,specialName,specialEn,requireResearch
+machine,机械飞升,钢铁洪流,MECHANICAL ASCENSION,"摒弃血肉,将文明托付给不知疲倦的钢铁。算力即是权力。",解锁建筑「数据核心」产出算力|专属升级重铸产能结构|自动采集能力大幅增强,算力,COMPUTE,r_ai
+swarm,蜂群意志,虫群之心,SWARM HIVE,"拥抱生物的终极形态——亿万个体,一个意志。生物质如潮水般涨落。",解锁建筑「孵化尖塔」产出生物质|群体进化使全线产出暴涨|点击灌注生物质可获爆发收益,生物质,BIOMASS,r_gene
+psionic,灵能升华,虚空回响,PSIONIC SUBLIMATION,"意识脱离肉体之壳,在现实与虚空的夹缝中低语。概率站在我们这边。","解锁建筑「灵能方碑」产出灵能|窥探未来,暴击与奇迹不断|扭曲现实的能量法则",灵能,PSION,r_psy

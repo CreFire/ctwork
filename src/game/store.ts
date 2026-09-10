@@ -510,7 +510,7 @@ export const useGame = create<GameStore>((set, get) => {
       const save = s.save;
       if (!save || !s.crate) return;
       const d = E.computeDerived(save);
-      const secs = 180;
+      const secs = GLOBAL.crateMinGainSeconds ?? 180; // 补给舱折算秒数来自 tb_global.crate_min_gain_seconds
       const r = save.run.res;
       const gains: string[] = [];
       (["energy", "material", "research"] as ResourceKey[]).forEach((k) => {
@@ -599,6 +599,6 @@ export const useGame = create<GameStore>((set, get) => {
   };
 });
 
-/** 每 8 秒自动存档(由 App 调用) */
-export const AUTOSAVE_MS = 8000;
+/** 自动存档间隔(由 App 调用),来自 tb_global.autosave_ms */
+export const AUTOSAVE_MS = GLOBAL.autosaveMs ?? 8000;
 export const TICK_MS = GLOBAL.tickMs;

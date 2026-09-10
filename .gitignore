@@ -38,6 +38,7 @@ ark-era-v0.1.zip
 
 # 后端
 server/bin/
-server/data/
+server/data/*
+!server/data/tables.json
 *.secret
 .arena-tmp/
