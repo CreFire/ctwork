@@ -1,0 +1,327 @@
+/**
+ * 方舟纪元 — 纯逻辑引擎层(与后端 Go 实现保持同一套公式)
+ * 所有函数无副作用地操作传入的 SaveState 草案,由 store 层调度。
+ */
+import {
+  BUILDINGS,
+  BUILDING_MAP,
+  CLICK_UPGRADES,
+  CORE_UPGRADES,
+  GLOBAL,
+  RESEARCH,
+  ROUTE_UPGRADES,
+  type BuildingDef,
+  type Cost,
+  type ResourceKey,
+  type RouteId,
+} from "./config";
+
+/* ================= 存档结构 ================= */
+
+export interface RunState {
+  runId: number;
+  startedAt: number; // ms
+  deadlineAt: number; // ms 地球解体时刻
+  res: Record<ResourceKey, number>;
+  route: RouteId | null;
+  buildings: Record<string, number>;
+  research: Record<string, boolean>;
+  clickUp: Record<string, number>;
+  routeUp: Record<string, number>;
+  firedStories: string[];
+  nextEventAt: number; // ms
+  stats: { energyTotal: number; clicks: number };
+}
+
+export interface MetaState {
+  cores: number; // 星核
+  coreUp: Record<string, number>;
+  runs: number;
+  escapes: number;
+  deaths: number;
+  bestRemainSec: number;
+  totalEnergy: number;
+  totalClicks: number;
+}
+
+export interface SaveState {
+  version: number;
+  uid: string;
+  createdAt: number;
+  lastTickAt: number;
+  run: RunState;
+  meta: MetaState;
+}
+
+/* ================= 派生属性 ================= */
+
+export interface Derived {
+  rates: Record<ResourceKey, number>; // 最终每秒产出
+  baseRates: Record<ResourceKey, number>; // 建筑裸产出(含里程碑)
+  mults: Record<ResourceKey, number>; // 最终乘区
+  srcMult: Record<"research" | "route" | "core" | "all", Record<ResourceKey, number>>;
+  clickPower: number;
+  autoClicks: number; // 每秒自动点击次数
+  autoRate: number; // 自动点击带来的能量/秒
+  crit: number; // 暴击率
+}
+
+const RES_KEYS: ResourceKey[] = ["energy", "material", "research", "special"];
+
+function emptyRes(v = 0): Record<ResourceKey, number> {
+  return { energy: v, material: v, research: v, special: v };
+}
+
+/** 计算全部派生属性(产物速率 / 点击 / 暴击) */
+export function computeDerived(save: SaveState): Derived {
+  const { run, meta } = save;
+
+  // 1) 建筑基础产出(含里程碑)
+  const base = emptyRes();
+  for (const def of BUILDINGS) {
+    const count = run.buildings[def.id] ?? 0;
+    if (!count) continue;
+    if (def.produces === "special" && run.route !== def.unlockRoute) continue;
+    const milestones = Math.floor(count / GLOBAL.milestoneEvery);
+    const mm = Math.pow(GLOBAL.milestoneMult, milestones);
+    base[def.produces] += count * def.perSec * mm;
+  }
+
+  // 2) 各来源乘区
+  const src: Derived["srcMult"] = { research: emptyRes(1), route: emptyRes(1), core: emptyRes(1), all: emptyRes(1) };
+  const acc = { mults: emptyRes(1), all: 1, clickMult: 1, autoClick: 0, crit: 0 };
+
+  // 科技
+  for (const def of RESEARCH) {
+    if (!run.research[def.id]) continue;
+    for (const e of def.effects) {
+      if (e.k === "mult") {
+        if (e.res === "all") for (const k of RES_KEYS) src.research[k] *= e.v;
+        else src.research[e.res] *= e.v;
+      }
+    }
+  }
+  // 点击升级
+  let clickUpMult = 1;
+  for (const def of CLICK_UPGRADES) {
+    const lvl = run.clickUp[def.id] ?? 0;
+    if (!lvl) continue;
+    if (def.effect.k === "clickMult") clickUpMult *= Math.pow(def.effect.v, lvl);
+    if (def.effect.k === "autoClick") acc.autoClick += def.effect.v * lvl;
+    if (def.effect.k === "crit") acc.crit += def.effect.v * lvl;
+  }
+  // 路线升级
+  for (const def of ROUTE_UPGRADES) {
+    const lvl = run.routeUp[def.id] ?? 0;
+    if (!lvl) continue;
+    if (def.route !== run.route) continue;
+    const e = def.effect;
+    if (e.k === "mult") {
+      if (e.res === "all") for (const k of RES_KEYS) src.route[k] *= Math.pow(e.v, lvl);
+      else src.route[e.res] *= Math.pow(e.v, lvl);
+    } else if (e.k === "clickMult") clickUpMult *= Math.pow(e.v, lvl);
+    else if (e.k === "autoClick") acc.autoClick += e.v * lvl;
+    else if (e.k === "crit") acc.crit += e.v * lvl;
+  }
+  // 星核遗产
+  for (const def of CORE_UPGRADES) {
+    const lvl = meta.coreUp[def.id] ?? 0;
+    if (!lvl) continue;
+    const e = def.effectPer;
+    if (e.k === "mult") {
+      const v = Math.pow(e.v, lvl);
+      if (e.res === "all") for (const k of RES_KEYS) src.core[k] *= v;
+      else src.core[e.res] *= v;
+    }
+  }
+
+  // 3) 汇总
+  const finalMult = emptyRes(1);
+  for (const k of RES_KEYS) finalMult[k] = src.research[k] * src.route[k] * src.core[k];
+  const rates = emptyRes();
+  for (const k of RES_KEYS) rates[k] = base[k] * finalMult[k];
+
+  const clickPower = GLOBAL.clickBasePower * clickUpMult;
+  const autoRate = acc.autoClick * clickPower;
+
+  return {
+    rates,
+    baseRates: base,
+    mults: finalMult,
+    srcMult: src,
+    clickPower,
+    autoClicks: acc.autoClick,
+    autoRate,
+    crit: Math.min(acc.crit, 0.95),
+  };
+}
+
+/* ================= 成本与购买 ================= */
+
+export function scaleCost(base: Cost, scale: number, owned: number): Cost {
+  const mult = Math.pow(scale, owned);
+  const c: Cost = {};
+  if (base.energy) c.energy = Math.ceil(base.energy * mult);
+  if (base.material) c.material = Math.ceil(base.material * mult);
+  if (base.research) c.research = Math.ceil(base.research * mult);
+  if (base.special) c.special = Math.ceil(base.special * mult);
+  return c;
+}
+
+export function specialCost(base: number, scale: number, lvl: number): number {
+  return Math.ceil(base * Math.pow(scale, lvl));
+}
+
+export function coreCost(base: number, inc: number, lvl: number): number {
+  return base + inc * lvl;
+}
+
+export function canAfford(save: SaveState, cost: Cost): boolean {
+  const r = save.run.res;
+  if (cost.energy && r.energy < cost.energy) return false;
+  if (cost.material && r.material < cost.material) return false;
+  if (cost.research && r.research < cost.research) return false;
+  if (cost.special && r.special < cost.special) return false;
+  return true;
+}
+
+export function payCost(save: SaveState, cost: Cost): void {
+  const r = save.run.res;
+  if (cost.energy) r.energy -= cost.energy;
+  if (cost.material) r.material -= cost.material;
+  if (cost.research) r.research -= cost.research;
+  if (cost.special) r.special -= cost.special;
+}
+
+export function isBuildingUnlocked(def: BuildingDef, save: SaveState): boolean {
+  if (def.unlockRoute) return save.run.route === def.unlockRoute;
+  if (def.unlockResearch) return !!save.run.research[def.unlockResearch];
+  return true;
+}
+
+export function researchAvailable(id: string, save: SaveState): "done" | "open" | "locked" {
+  const run = save.run;
+  if (run.research[id]) return "done";
+  const def = RESEARCH.find((r) => r.id === id);
+  if (!def) return "locked";
+  return def.req.every((q) => run.research[q]) ? "open" : "locked";
+}
+
+/* ================= 存档生命周期 ================= */
+
+export function newMeta(): MetaState {
+  return { cores: 0, coreUp: {}, runs: 0, escapes: 0, deaths: 0, bestRemainSec: 0, totalEnergy: 0, totalClicks: 0 };
+}
+
+export function countdownBonus(meta: MetaState): number {
+  const lvl = meta.coreUp["cu_anchor"] ?? 0;
+  return lvl * 600;
+}
+
+export function newRun(runId: number, meta: MetaState, now: number): RunState {
+  const duration = GLOBAL.earthCountdownSeconds + countdownBonus(meta);
+  const res = emptyRes();
+  const kit = meta.coreUp["cu_seeder"] ?? 0;
+  if (kit > 0) {
+    res.energy = 4000 * kit;
+    res.material = 150 * kit;
+    res.research = 20 * kit;
+  }
+  return {
+    runId,
+    startedAt: now,
+    deadlineAt: now + duration * 1000,
+    res,
+    route: null,
+    buildings: {},
+    research: {},
+    clickUp: {},
+    routeUp: {},
+    firedStories: [],
+    nextEventAt: now + 150_000,
+    stats: { energyTotal: 0, clicks: 0 },
+  };
+}
+
+export function newSave(uid: string, now: number): SaveState {
+  const meta = newMeta();
+  return { version: GLOBAL.version, uid, createdAt: now, lastTickAt: now, run: newRun(1, meta, now), meta };
+}
+
+/* ================= 生产结算 ================= */
+
+export function applyTick(save: SaveState, d: Derived, dtSec: number): void {
+  const r = save.run.res;
+  r.energy += d.rates.energy * dtSec + d.autoRate * dtSec;
+  r.material += d.rates.material * dtSec;
+  r.research += d.rates.research * dtSec;
+  r.special += d.rates.special * dtSec;
+  const earned = d.rates.energy * dtSec + d.autoRate * dtSec;
+  save.run.stats.energyTotal += earned;
+  save.meta.totalEnergy += earned;
+}
+
+export interface OfflineResult {
+  seconds: number;
+  gains: Record<ResourceKey, number>;
+  died: boolean;
+}
+
+/** 离线结算:收益按上限与截止时间取小,若已超过截止时间则判定母星已毁 */
+export function applyOffline(save: SaveState, now: number): OfflineResult {
+  const d = computeDerived(save);
+  const last = save.lastTickAt;
+  const cap = GLOBAL.offlineCapHours * 3600;
+  const deadlineSec = save.run.deadlineAt / 1000;
+  const lastSec = last / 1000;
+  const prodSec = Math.max(0, Math.min(now / 1000, deadlineSec) - lastSec);
+  const seconds = Math.min(prodSec, cap);
+  const gains = emptyRes();
+  const eff = GLOBAL.offlineEfficiency;
+  for (const k of RES_KEYS) gains[k] = d.rates[k] * seconds * eff;
+  gains.energy += d.autoRate * seconds * eff;
+  const r = save.run.res;
+  for (const k of RES_KEYS) r[k] += gains[k];
+  save.run.stats.energyTotal += gains.energy;
+  save.meta.totalEnergy += gains.energy;
+  save.lastTickAt = now;
+  return { seconds, gains, died: now >= save.run.deadlineAt };
+}
+
+/* ================= 发射与轮回 ================= */
+
+export function launchReady(save: SaveState): { ok: boolean; missing: string[] } {
+  const missing: string[] = [];
+  if (!save.run.research["r_engine"]) missing.push("研究「曲率引擎」");
+  if (save.run.res.energy < GLOBAL.launchEnergyReq) missing.push(`储备能量 ${GLOBAL.launchEnergyReq.toLocaleString()}`);
+  if (save.run.res.material < GLOBAL.launchMaterialReq) missing.push(`储备物资 ${GLOBAL.launchMaterialReq.toLocaleString()}`);
+  return { ok: missing.length === 0, missing };
+}
+
+export interface RewardBreakdown {
+  base: number;
+  production: number;
+  time: number;
+  total: number;
+  escaped: boolean;
+}
+
+export function computeReward(save: SaveState, escaped: boolean, now: number): RewardBreakdown {
+  const produced = Math.max(0, save.run.stats.energyTotal);
+  const prodPart = Math.floor(Math.sqrt(produced / 1e6));
+  const remainSec = Math.max(0, (save.run.deadlineAt - now) / 1000);
+  if (escaped) {
+    const base = GLOBAL.rewardBase;
+    const time = Math.floor(remainSec / 600);
+    return { base, production: prodPart, time, total: base + prodPart + time, escaped: true };
+  }
+  const total = 1 + Math.floor(prodPart / 2);
+  return { base: 1, production: Math.floor(prodPart / 2), time: 0, total, escaped: false };
+}
+
+/** 查找建筑定义 */
+export function buildingDef(id: string): BuildingDef {
+  const def = BUILDING_MAP.get(id);
+  if (!def) throw new Error("unknown building " + id);
+  return def;
+}

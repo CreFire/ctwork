@@ -1,0 +1,246 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-display: "Rajdhani", "Noto Sans SC", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", "Noto Sans SC", monospace;
+  --color-void: #04070e;
+  --color-panel: #0a1322;
+  --color-panel2: #0d1a2e;
+  --color-line: rgba(103, 232, 249, 0.12);
+  --color-glow: #22d3ee;
+  --color-amberx: #f59e0b;
+  --color-greenx: #4ade80;
+  --color-violetx: #a78bfa;
+  --color-redx: #f87171;
+}
+
+html,
+body {
+  background: var(--color-void);
+  color: #cbd5e1;
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.28);
+  color: #e2f6ff;
+}
+
+/* ---------- 数字 ---------- */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+.disp {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+/* ---------- 面板 ---------- */
+.panel {
+  position: relative;
+  background: linear-gradient(160deg, rgba(13, 26, 46, 0.72), rgba(7, 13, 26, 0.82));
+  border: 1px solid rgba(103, 232, 249, 0.12);
+  backdrop-filter: blur(10px);
+}
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(34, 211, 238, 0.55), transparent 30%) top left / 42px 1px no-repeat,
+    linear-gradient(180deg, rgba(34, 211, 238, 0.55), transparent 30%) top left / 1px 42px no-repeat,
+    linear-gradient(270deg, rgba(34, 211, 238, 0.35), transparent 30%) bottom right / 42px 1px no-repeat,
+    linear-gradient(0deg, rgba(34, 211, 238, 0.35), transparent 30%) bottom right / 1px 42px no-repeat;
+  opacity: 0.7;
+}
+
+.hud-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: rgba(103, 232, 249, 0.55);
+  text-transform: uppercase;
+}
+
+/* ---------- 滚动条 ---------- */
+.scroll-slim::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.scroll-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: rgba(103, 232, 249, 0.18);
+  border-radius: 99px;
+}
+.scroll-slim::-webkit-scrollbar-thumb:hover {
+  background: rgba(103, 232, 249, 0.35);
+}
+
+/* ---------- 扫描线 ---------- */
+.scanlines::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.014) 0 1px, transparent 1px 3px);
+  mix-blend-mode: overlay;
+}
+
+/* ---------- 动画 ---------- */
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-slow {
+  animation: spin-slow 22s linear infinite;
+}
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.pulse-soft {
+  animation: pulse-soft 2.2s ease-in-out infinite;
+}
+@keyframes urgent-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 24px 4px rgba(248, 113, 113, 0.25);
+  }
+}
+.urgent-pulse {
+  animation: urgent-pulse 1s ease-in-out infinite;
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise-in {
+  animation: rise-in 0.35s ease both;
+}
+@keyframes crate-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* 爆炸过场 */
+@keyframes flashout {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes shock {
+  0% {
+    transform: scale(0.05);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+@keyframes shake-hard {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-7px, 4px);
+  }
+  40% {
+    transform: translate(6px, -5px);
+  }
+  60% {
+    transform: translate(-5px, -3px);
+  }
+  80% {
+    transform: translate(4px, 5px);
+  }
+}
+.shake-hard {
+  animation: shake-hard 0.5s linear infinite;
+}
+@keyframes streak {
+  0% {
+    transform: translateX(-110%) skewX(-18deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(240%) skewX(-18deg);
+    opacity: 0;
+  }
+}
+
+/* 能量核心按钮 */
+.core-ring {
+  background: conic-gradient(from 0deg, rgba(34, 211, 238, 0), rgba(34, 211, 238, 0.9), rgba(34, 211, 238, 0) 60%);
+  animation: spin-slow 6s linear infinite;
+}
+.core-ring2 {
+  background: conic-gradient(from 180deg, rgba(167, 139, 250, 0), rgba(167, 139, 250, 0.6), rgba(167, 139, 250, 0) 55%);
+  animation: spin-slow 11s linear infinite reverse;
+}
+.core-body {
+  background:
+    radial-gradient(circle at 34% 30%, rgba(148, 233, 255, 0.32), transparent 42%),
+    radial-gradient(circle at 50% 55%, rgba(14, 116, 144, 0.55), rgba(5, 13, 26, 0.96) 68%);
+  box-shadow:
+    inset 0 0 34px rgba(34, 211, 238, 0.22),
+    0 0 46px rgba(34, 211, 238, 0.12);
+}
+.core-body:active {
+  transform: scale(0.965);
+}
+.core-body {
+  transition: transform 0.08s ease;
+}
+
+/* 进度条流光 */
+@keyframes bar-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.bar-shimmer {
+  background-image: linear-gradient(100deg, rgba(255, 255, 255, 0) 42%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0) 58%);
+  background-size: 200% 100%;
+  animation: bar-shimmer 2.4s linear infinite;
+}
