@@ -1,0 +1,13 @@
+##type = bean
+##file = Research
+##group = c,s
+##brief = 科技树节点定义
+#name,type,comment,required
+id,string,唯一ID,1
+name,string,中文名,1
+desc,string,描述,1
+quote,string?,引言,0
+era,int,所属纪元ID,1
+cost,Cost,消耗,1
+req,list<string>?,前置科技ID列表,0
+effects,list<Effect>?,效果列表,0

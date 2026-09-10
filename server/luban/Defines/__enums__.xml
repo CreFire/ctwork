@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 资源类型枚举 -->
+  <enum name="ResourceType" comment="资源类型枚举">
+    <var name="energy" value="0" comment="能量"/>
+    <var name="material" value="1" comment="物资"/>
+    <var name="research" value="2" comment="科研"/>
+    <var name="special" value="3" comment="特殊资源(算力/生物质/灵能)"/>
+    <var name="all" value="4" comment="全部资源聚合"/>
+  </enum>
+
+  <!-- 产业链枚举 -->
+  <enum name="ChainType" comment="产业链类型">
+    <var name="energy" value="0" comment="能源产业链"/>
+    <var name="material" value="1" comment="物资产业链"/>
+    <var name="research" value="2" comment="科研产业链"/>
+    <var name="special" value="3" comment="特殊路线产业链"/>
+  </enum>
+
+  <!-- 飞升路线枚举 -->
+  <enum name="RouteId" comment="飞升路线ID">
+    <var name="machine" value="0" comment="机械飞升" alias="算力|COMPUTE"/>
+    <var name="swarm" value="1" comment="蜂群意志" alias="生物质|BIOMASS"/>
+    <var name="psionic" value="2" comment="灵能升华" alias="灵能|PSION"/>
+  </enum>
+
+  <!-- 效果类型枚举 -->
+  <enum name="EffectKind" comment="效果类型">
+    <var name="mult" value="0" comment="产出乘区"/>
+    <var name="clickMult" value="1" comment="点击倍率"/>
+    <var name="autoClick" value="2" comment="自动点击"/>
+    <var name="crit" value="3" comment="暴击率"/>
+    <var name="countdown" value="4" comment="倒计时延长"/>
+    <var name="enableRoute" value="5" comment="解锁路线"/>
+    <var name="startKit" value="6" comment="开局补给"/>
+    <var name="note" value="7" comment="说明"/>
+    <var name="final" value="8" comment="终章"/>
+  </enum>
+
+  <!-- 随机事件种类 -->
+  <enum name="EventKind" comment="随机事件种类">
+    <var name="instant" value="0" comment="瞬时资源"/>
+    <var name="crate" value="1" comment="补给舱"/>
+    <var name="deadline" value="2" comment="时间奖励"/>
+  </enum>
+
+  <!-- 事件语气 -->
+  <enum name="EventTone" comment="事件语气">
+    <var name="info" value="0" comment="信息"/>
+    <var name="success" value="1" comment="成功"/>
+    <var name="warn" value="2" comment="警告"/>
+    <var name="danger" value="3" comment="危险"/>
+    <var name="story" value="4" comment="剧情"/>
+  </enum>
+</root>

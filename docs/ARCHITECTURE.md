@@ -92,25 +92,106 @@ server/
 3. 离线结算在服务端执行(`applyOffline` 同公式),防止改本地时间。
 4. `pass_hash` 使用 bcrypt(成本 10),登录接口 IP 限速 + 失败冷却。
 
-## 3. 配置:Luban 方案
+## 3. 配置:Luban 方案 (已完整实现)
 
-- 表在 Excel/CSV 中维护,`luban` 一键导出 **Go(服务端权威)** 与 **TypeScript(客户端表现)** 双端代码。
-- 前端 `src/game/config.ts` 即为客户端表的**等价手写版**,字段命名与 bean 一致,
-  接入 Luban 后以生成物直接替换,引擎层零改动。
-- 表清单(样例见 `server/luban/*.csv`):
+### 3.1 总览
 
-| 表 | 用途 | 关键列 |
+- 所有游戏数值均来自 `server/luban/tables/*.csv`，由 `scripts/luban-gen.mjs` 生成双端代码，**彻底消除硬编码**。
+- 前端 `src/game/config.ts` 从 `src/game/generated/Tables.ts` 导入生成表，并通过 `configValidator.ts` 进行运行时校验与回退，保证健壮性。
+- 后端 Go 读取 `server/data/tables.json` 或 `server/internal/config/gen/tables_gen.go`，与前端同源。
+
+```
+CSV (策划) → luban-gen.mjs → Tables.ts + Beans.ts + Enums.ts + tables.json + tables_gen.go
+                                      ↓
+                              config.ts (校验+回退) → engine.ts / store.ts (零改动)
+```
+
+### 3.2 目录结构
+
+```
+server/luban/
+├── luban.conf                 # 全局配置：表清单、生成目标、校验规则
+├── Defines/
+│   ├── __enums__.xml          # 枚举定义
+│   ├── __beans__.xml          # Bean 定义
+│   └── __tables__.xml         # 表定义
+├── enums/                     # 枚举表 (CSV, ##type=enum)
+│   ├── enum_resource_type.csv
+│   ├── enum_route_id.csv
+│   ├── enum_effect_kind.csv
+│   └── ...
+├── beans/                     # Bean 表 (CSV, ##type=bean)
+│   ├── bean_cost.csv
+│   ├── bean_effect.csv
+│   └── ...
+├── tables/                    # 数据表 (CSV, ##type=table)
+│   ├── tb_global.csv          # 全局常量 25 键
+│   ├── tb_building.csv        # 建筑 16 种
+│   ├── tb_click_upgrade.csv   # 点击升级 3 种
+│   ├── tb_era.csv             # 纪元 6 个
+│   ├── tb_research.csv        # 科技 16 项
+│   ├── tb_route.csv           # 路线 3 条
+│   ├── tb_route_upgrade.csv   # 路线升级 12 项
+│   ├── tb_core_upgrade.csv    # 星核遗产 5 项
+│   ├── tb_story.csv           # 剧情 7 条
+│   ├── tb_random_event.csv    # 随机事件 6 种
+│   └── ...
+src/game/generated/            # 生成产物
+├── Enums.ts / Beans.ts / Tables.ts
+└── data/tables.json
+```
+
+### 3.3 表清单
+
+| 表 | 用途 | 关键列 | 数量 |
+|---|---|---|---|
+| `tb_global` | 全局常量:倒计时、离线效率、发射需求、补给、奖励除数等 | key/value | 25 键 |
+| `tb_building` | 建筑 | id/chain/base_cost/scale/per_sec/unlock | 16 |
+| `tb_click_upgrade` | 点击升级 | effect_k/effect_v | 3 |
+| `tb_era` | 纪元 | id/name/flavor | 6 |
+| `tb_research` | 科技树 | era/cost/req/effects | 16 |
+| `tb_route` | 三大路线 | id/special_name/require | 3 |
+| `tb_route_upgrade` | 路线升级 | route/effect/max/scale | 12 |
+| `tb_core_upgrade` | 星核遗产(跨轮回) | effect_per/max/cost | 5 |
+| `tb_random_event` | 随机事件 | kind/res/seconds/weight | 6 |
+| `tb_story` | 倒计时剧情 | remain_sec/tone/text | 7 |
+| `tb_res_meta` | 资源元信息 | color | 4 |
+| `tb_leaderboard_name` | 排行榜名字库 | name | 30 |
+
+### 3.4 Enum 表
+
+| Enum | 值 | 说明 |
 |---|---|---|
-| `tb_global`        | 全局常量:倒计时、离线效率、发射需求 | key/value |
-| `tb_building`      | 建筑 | id/chain/base_cost/scale/per_sec/unlock |
-| `tb_research`      | 科技树 | era/cost/req/effects |
-| `tb_route`         | 三大路线 | id/special_name/require |
-| `tb_route_upgrade` | 路线升级 | route/effect/max/scale |
-| `tb_core`          | 星核遗产(跨轮回) | effect_per/max/cost |
-| `tb_event`         | 随机事件 | kind/res/seconds/weight |
-| `tb_story`         | 倒计时剧情 | remain_sec/tone/text |
+| `ResourceType` | energy, material, research, special, all | 资源类型 |
+| `ChainType` | energy, material, research, special | 产业链 |
+| `RouteId` | machine, swarm, psionic | 飞升路线 |
+| `EffectKind` | mult, clickMult, autoClick, crit, countdown, enableRoute, startKit, note, final | 效果类型 |
+| `EventKind` | instant, crate, deadline | 事件种类 |
+| `EventTone` | info, success, warn, danger, story | 事件语气 |
 
-策划只需改表 → 跑 `gen.bat` → 双端同时生效。
+### 3.5 Bean 表
+
+| Bean | 用途 | 字段 |
+|---|---|---|
+| `Cost` | 资源消耗 | energy?, material?, research?, special? |
+| `Effect` | 效果定义 | k, res?, v?, route?, text? |
+| `Building` | 建筑 | id, name, chain, baseCost, scale, produces, perSec, unlock |
+| `ClickUpgrade` | 点击升级 | baseCost, scale, max, effect |
+| `Research` | 科技 | era, cost, req[], effects[] |
+| `Route` | 路线 | specialName, requireResearch, perks[] |
+| ... | ... | ... |
+
+详见 `docs/LUBAN_CONFIG.md` 与 `server/luban/README.md`。
+
+### 3.6 健壮性设计
+
+- **三层校验**: CSV 解析层 → 业务校验层 (`configValidator.ts`) → 运行时回退层 (`config.ts` safeGet + FALLBACK)
+- **默认值回退**: 生成表缺失时使用内嵌默认值，游戏不崩溃
+- **范围钳制**: 如 `scale` 超出 [1.0,2.0] 自动钳制并警告
+- **重复ID检测**: 生成时与校验时均检查重复ID
+- **热更支持**: `configLoader.ts` 支持远程 JSON 加载与缓存
+
+策划只需改表 → `npm run gen:luban` → 双端同时生效，引擎层零改动。
 
 ## 4. 路线图
 

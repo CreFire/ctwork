@@ -1,0 +1,11 @@
+##type = table
+##file = ResMetaTable
+##group = c
+##brief = 资源元信息展示用
+##mode = map
+##key = id
+#id,name,en,color
+energy,能量,ENERGY,#22d3ee
+material,物资,MATERIAL,#f59e0b
+research,科研,SCIENCE,#4ade80
+special,特殊,SPECIAL,#a78bfa

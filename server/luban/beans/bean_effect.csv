@@ -1,0 +1,11 @@
+##type = bean
+##file = Effect
+##group = c,s
+##brief = 效果定义(多态效果)
+##comment = k决定生效字段：mult需res+v, clickMult/autoClick/crit/countdown/startKit需v, enableRoute需route, note需text, final无附加
+#name,type,comment,required
+k,EffectKind,效果类型,1
+res,ResourceType?,资源类型(仅mult时),0
+v,float?,数值,0
+route,RouteId?,路线ID(仅enableRoute时),0
+text,string?,说明文本(仅note时),0

@@ -1,0 +1,12 @@
+##type = bean
+##file = CoreUpgrade
+##group = c,s
+##brief = 星核遗产升级(跨轮回永久)
+#name,type,comment,required
+id,string,唯一ID,1
+name,string,中文名,1
+desc,string,描述,1
+max,int,最大等级,1
+base,int,基础星核消耗,1
+inc,int,每级递增消耗,1
+effectPer,Effect,每级效果,1

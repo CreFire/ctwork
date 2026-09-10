@@ -1,0 +1,14 @@
+##type = bean
+##file = Route
+##group = c,s
+##brief = 飞升路线定义
+#name,type,comment,required
+id,RouteId,路线ID,1
+name,string,中文名,1
+title,string,称号,1
+en,string,英文名,1
+desc,string,描述,1
+perks,list<string>,特性列表,1
+specialName,string,特殊资源中文名,1
+specialEn,string,特殊资源英文名,1
+requireResearch,string,解锁所需科技ID,1

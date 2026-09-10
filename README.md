@@ -22,7 +22,9 @@
 ```bash
 # 0) 前置:Go 1.27+ 与 Node 20+
 # 1) 构建前端单文件 + 编译后端
-npm install && npm run build          # 产出 dist/
+npm install
+npm run gen:luban              # 生成 Luban 配置 (首次克隆后必须)
+npm run build                  # 产出 dist/
 cd server && go mod tidy && go build -o bin/ctwork-server ./cmd/server && cd ..
 
 # 2) 启动(web + API 同端口,默认 :8090)
@@ -42,7 +44,81 @@ npm run dev                    # vite :5173,/api 自动代理到 :8090
 
 Docker 一键起 MongoDB + 服务端:`docker compose up -d --build` → http://localhost:8090
 
-## 后端(dueGame 风格 · Go · MongoDB)v0.1 已实现
+### 排行榜后端 (Node 备用 / 完整版)
+
+```bash
+# 启动 Node 排行榜后端 (兼容 dueGame 协议)
+npm run server:dev
+# 健康检查 http://localhost:3001/health
+# 排行榜 http://localhost:3001/api/v1/league/top
+
+# 前端接入真实后端 (二选一)
+VITE_API_BASE=http://localhost:8090 npm run dev   # Go 后端
+VITE_API_URL=http://localhost:3001 npm run dev    # Node 排行榜后端
+```
+
+## Luban 配置系统
+
+本项目已实现完整的 Luban 配置驱动体系，**所有游戏数值均来自 CSV 配置表，拒绝硬编码**：
+
+- **配置表**: `server/luban/tables/*.csv` (12张功能表)
+- **枚举表**: `server/luban/enums/*.csv` (6个枚举)
+- **Bean表**: `server/luban/beans/*.csv` (12个Bean)
+- **全局配置**: `server/luban/luban.conf` (总控)
+- **定义文件**: `server/luban/Defines/*.xml` (枚举/Bean/表定义)
+- **生成产物**: `src/game/generated/` (TS代码 + JSON) + `server/internal/config/gen/`
+- **生成器**: `scripts/luban-gen.mjs` (模拟 Luban 官方工具链)
+- **校验器**: `src/game/configValidator.ts` + `scripts/validate-config.mjs`
+
+策划改表流程：
+
+```bash
+# 1. 编辑 CSV，例如 server/luban/tables/tb_building.csv
+# 2. 生成
+npm run gen:luban
+# 3. 校验
+npm run validate:config
+# 4. 前后端自动生效
+```
+
+详见：
+
+- `server/luban/README.md` - 快速开始
+- `docs/LUBAN_CONFIG.md` - 完整文档
+- `docs/ARCHITECTURE.md` §3 - 架构中的配置方案
+
+### 健壮性设计
+
+- **三层校验**: CSV解析 → 业务校验 → 运行时回退
+- **默认值回退**: 配置缺失时使用内嵌默认值，游戏不崩溃
+- **范围钳制**: 非法值自动修正并警告
+- **重复ID检测**: 生成与校验时均检查
+- **热更支持**: `configLoader.ts` 支持远程 JSON 加载
+
+## 账号体系与排行榜后端
+
+账号+密码一键登录,**不存在即自动注册**,一个账号绑定一个 UID。
+
+### 双模式后端
+
+- **Mock 模式** (`VITE_USE_MOCK=1` 或 `VITE_API_URL` 为空): 使用 `mockServer.ts` (localStorage) 模拟所有接口，排行榜为本地模拟
+- **Real 模式** (默认): 接入真实后端
+  - Go 后端 `:8090` (文件存储或 MongoDB)
+  - Node 排行榜后端 `:3001` (MemoryStore + 文件持久化)
+
+### 排行榜特性
+
+- **协议**: 兼容 dueGame，`POST /api/v1/auth/login`, `GET/POST /api/v1/player/save`, `GET /api/v1/league/top`, `POST /api/v1/league/submit`, `GET /api/v1/league/stats`
+- **存储**: MemoryStore + 文件持久化 (30s 自动保存)，可无缝替换为 MongoDB (`players` / `saves` / `league_run`)
+- **反作弊**: 资源增量上限、分数上限 1e12、限流、版本校验、bcrypt + JWT
+- **配置驱动**: 分数公式来自 `tb_global.csv` (rewardProdDivisor, rewardTimeDivisor)
+- **双端实现**: Go (权威) + Node (备用，可运行)
+
+详见 `docs/LEADERBOARD.md`。
+
+存档每 8 秒自动同步,支持离线结算与死亡结算，轮回结束自动提交排行榜。
+
+## 后端(dueGame 风格 · Go · MongoDB) v0.1 已实现
 
 结构对齐 dueGame(gate 接入层 + module 逻辑模块 + engine 权威引擎 + store 仓储):
 
@@ -71,47 +147,61 @@ Docker 一键起 MongoDB + 服务端:`docker compose up -d --build` → http://l
 **存储**:默认本地 JSON 文件(`ARK_DATA_DIR`,开发零依赖);设 `ARK_MONGO_URI` 切 MongoDB
 (`players` / `saves` / `league_run` 三集合,整档 JSON + 服务端接收时间戳)。
 
-## 账号体系
-
-账号+密码一键登录,**不存在即自动注册**,一个账号绑定一个 UID。
-前端默认连接正式后端;`VITE_USE_MOCK=1` 可切回内置 `src/services/mockServer.ts` 离线演示。
-存档每 8 秒自动同步,支持离线结算与死亡结算。
-
 ## 目录结构
 
 ```
 src/                        # 前端(React19 + Vite + Tailwind4 + Zustand)
 ├── game/
-│   ├── config.ts    # 全部游戏配置表(与 Luban 表结构对齐)
-│   ├── engine.ts    # 纯函数引擎:产出/成本/离线/轮回奖励(与服务端同公式)
-│   ├── store.ts     # Zustand 中枢:tick/购买/研究/路线/发射/事件/自动存档
+│   ├── config.ts              # 配置入口：导入生成表 + 校验 + 回退 (Luban驱动)
+│   ├── configValidator.ts     # 配置校验层
+│   ├── configLoader.ts        # 配置加载器：热更
+│   ├── leagueStore.ts         # 排行榜状态
+│   ├── generated/             # Luban 生成产物
+│   │   ├── Enums.ts / Beans.ts / Tables.ts / data/tables.json
+│   ├── engine.ts              # 纯函数引擎 (与服务端同公式,数值来自GLOBAL)
+│   ├── store.ts               # Zustand 中枢 + 排行榜提交
 │   ├── fmt.ts / sound.ts
 ├── services/
-│   ├── serverClient.ts  # 正式后端 HTTP 客户端(默认)
-│   └── mockServer.ts    # 模拟后端(VITE_USE_MOCK=1 时启用)
-├── components/          # 认证 / HUD / 六个玩法页 / 过场动画 / 画布
-server/                   # 后端(dueGame 风格)
-├── cmd/server/main.go    # 入口:单进程网关
+│   ├── api.ts                 # 统一API客户端：自动切换 Mock/Real
+│   ├── serverClient.ts        # 正式后端 HTTP 客户端(默认)
+│   ├── mockServer.ts          # 模拟后端(VITE_USE_MOCK=1)
+│   └── leaderboardService.ts  # 排行榜业务层
+├── components/game/
+│   ├── SidePanel.tsx          # 侧边栏：倒计时 + 地球 + 日志 + 迷你榜 (LIVE/MOCK)
+│   ├── LeaderboardTab.tsx     # 完整排行榜页
+│   ├── ChronicleTab.tsx       # 文明编年史/墓碑
+│   └── ...
+server/                     # 后端
+├── cmd/server/main.go        # 入口:单进程网关
 ├── internal/
-│   ├── gate/             # HTTP 接入:路由/JWT/限流/CORS/静态托管
-│   ├── module/           # 账号:登录即注册 + bcrypt + JWT
-│   ├── engine/           # 服务端权威公式 + 反作弊校验 + 双端一致性测试
-│   └── store/            # filestore(默认)/ mongostore(生产)
-├── luban/                # Luban 配置表样例(tb_global / tb_building)
-scripts/gen-fixture.mjs   # TS↔Go 数值一致性 fixture 生成器
-docs/ARCHITECTURE.md      # 总体架构(协议/反作弊/PvE 路线图)
-docs/HANDOFF.md           # 任务交接/复现说明
+│   ├── gate/                 # HTTP 接入:路由/JWT/限流/CORS/静态托管
+│   ├── module/               # 账号:登录即注册 + bcrypt + JWT + 排行榜
+│   ├── engine/               # 服务端权威公式 + 反作弊校验 + 双端一致性测试
+│   └── store/                # filestore(默认)/ mongostore(生产)
+├── luban/                    # Luban 配置中心 (conf + Defines + enums + beans + tables)
+├── node/                     # Node 排行榜后端 (备用)
+│   ├── src/index.mjs
+│   └── src/routes/ + services/ + storage/
+└── go/ (旧路径预留)          # Go 排行榜备用
+scripts/
+├── luban-gen.mjs             # Luban 生成器
+├── validate-config.mjs       # 配置校验
+└── gen-fixture.mjs           # TS↔Go 数值一致性 fixture 生成器
+docs/
+├── ARCHITECTURE.md
+├── LUBAN_CONFIG.md
+├── LEADERBOARD.md
+└── HANDOFF.md
 ```
 
 ## 配置(Luban)
 
-`src/game/config.ts` 为客户端表的手写等价版,字段命名与 bean 一致;
-表样例见 `server/luban/*.csv`(tb_global / tb_building)。
-接入 Luban 后由生成物直接替换双端配置,引擎层零改动。
+`src/game/config.ts` 为 Luban 生成表的封装，字段命名与 bean 一致;
+表样例见 `server/luban/tables/*.csv`，由 `npm run gen:luban` 生成双端代码。
 
 ## 路线图
 
-- v0.1 ✅ 单机闭环 + HTTP 云存档 + 真实排行榜 + 服务端反作弊(当前)
+- v0.1 ✅ 单机闭环 + HTTP 云存档 + 真实排行榜 + 服务端反作弊 + Luban 配置驱动 (当前)
 - v0.2 WS 长连接(due transport)· 服务端离线结算 · 赛季
 - v0.3 联机 PvE:方舟小队讨伐「流浪黑洞」
 - v0.4 舰队公会 · 路线赛季 · 交易行

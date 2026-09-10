@@ -1,0 +1,16 @@
+##type = bean
+##file = Building
+##group = c,s
+##brief = 建筑定义Bean
+#name,type,comment,required
+id,string,唯一ID,1
+name,string,中文名,1
+en,string,英文名,1
+chain,ChainType,产业链,1
+desc,string,描述,1
+baseCost,Cost,基础消耗,1
+scale,float,递增系数(>=1.0),1
+produces,ResourceType,产出资源类型,1
+perSec,float,每秒基础产出,1
+unlockResearch,string?,前置科技ID,0
+unlockRoute,RouteId?,前置路线ID,0

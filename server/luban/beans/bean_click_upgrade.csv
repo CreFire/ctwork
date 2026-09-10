@@ -1,0 +1,13 @@
+##type = bean
+##file = ClickUpgrade
+##group = c,s
+##brief = 点击升级定义
+#name,type,comment,required
+id,string,唯一ID,1
+name,string,中文名,1
+desc,string,描述,1
+baseCost,int,基础能量消耗,1
+scale,float,递增系数,1
+max,int,最大等级,1
+effect,Effect,效果,1
+perText,string,每级效果描述,1

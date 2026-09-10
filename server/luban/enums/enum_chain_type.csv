@@ -1,0 +1,9 @@
+##type = enum
+##file = ChainType
+##group = c,s
+##brief = 产业链类型枚举
+#name,value,comment
+energy,0,能源产业链
+material,1,物资产业链
+research,2,科研产业链
+special,3,特殊路线产业链

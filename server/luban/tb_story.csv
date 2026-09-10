@@ -1,0 +1,13 @@
+##type = table
+##file = StoryTable
+##group = c,s
+##brief = 倒计时剧情事件
+##mode = list
+#id,remainSec,text,tone
+st_start,3599,「方舟协定」签署完毕全球资源统一调度倒计时开始。,info
+st_75,2700,地壳应力突破临界值环太平洋火山群接连苏醒。,warn
+st_60,2160,最后一批冬眠舱完成装载孩子们还不知道发生了什么。,info
+st_40,1440,月球监测站失联引力网格出现无法解释的涟漪。,warn
+st_25,900,全球广播进入静默所有人停下了手中的告别。,danger
+st_10,360,地核裂解不可逆海洋开始沸腾。,danger
+st_last,60,最后六十秒所有传感器转向母星作别。,danger

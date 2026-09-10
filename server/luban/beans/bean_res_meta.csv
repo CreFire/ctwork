@@ -1,0 +1,9 @@
+##type = bean
+##file = ResMeta
+##group = c
+##brief = 资源元信息(展示用)
+#name,type,comment,required
+id,ResourceType,资源ID,1
+name,string,中文名,1
+en,string,英文名,1
+color,string,展示颜色HEX,1

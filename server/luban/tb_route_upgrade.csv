@@ -1,0 +1,19 @@
+##type = table
+##file = RouteUpgradeTable
+##group = c,s
+##brief = 路线升级表
+##mode = map
+##key = id
+#id,route,name,desc,max,baseCost,scale,effect_k,effect_res,effect_v
+ru_m_furnace,machine,泰坦锻炉,能量产出 ×1.35 / 级,10,30,1.75,mult,energy,1.35
+ru_m_net,machine,分布式矩阵,科研产出 ×1.4 / 级,10,40,1.8,mult,research,1.4
+ru_m_drone,machine,无人军团,自动点击 +3 次/秒 / 级,10,55,1.9,autoClick,,3
+ru_m_alloy,machine,自修复合金,物资产出 ×1.35 / 级,10,40,1.8,mult,material,1.35
+ru_s_breed,swarm,基因裂变舱,全部产出 ×1.2 / 级,10,45,1.85,mult,all,1.2
+ru_s_hive,swarm,蜂巢心智,科研产出 ×1.45 / 级,10,40,1.8,mult,research,1.45
+ru_s_acid,swarm,熔解酸巢,物资产出 ×1.5 / 级,10,35,1.75,mult,material,1.5
+ru_s_tide,swarm,生物质潮汐,点击产出 ×1.6 / 级,10,50,1.9,clickMult,,1.6
+ru_p_seer,psionic,预知回路,暴击率 +5% / 级,10,35,1.8,crit,,0.05
+ru_p_void,psionic,虚空汲取,能量产出 ×1.45 / 级,10,40,1.8,mult,energy,1.45
+ru_p_mind,psionic,意志共鸣,科研产出 ×1.4 / 级,10,40,1.8,mult,research,1.4
+ru_p_warp,psionic,现实扭曲,全部产出 ×1.22 / 级,10,55,1.9,mult,all,1.22
