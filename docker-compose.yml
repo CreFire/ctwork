@@ -1,0 +1,25 @@
+# 方舟纪元 — 一键起 MongoDB + 游戏服务端
+#   docker compose up -d --build
+#   打开 http://localhost:8090
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+  server:
+    build: .
+    restart: unless-stopped
+    environment:
+      ARK_MONGO_URI: mongodb://mongo:27017/ark_era
+      ARK_MONGO_DB: ark_era
+    depends_on:
+      - mongo
+    ports:
+      - "8090:8090"
+
+volumes:
+  mongo-data:

@@ -18,12 +18,9 @@ logs/
 *.log
 
 # 环境变量(切勿提交密钥)
-.env
-.env.*
 !.env.example
 
 # 编辑器/系统
-.vscode/*
 !.vscode/extensions.json
 .idea/
 .DS_Store
@@ -35,3 +32,10 @@ Thumbs.db
 
 # 本地下载包
 ark-era-v0.1.zip
+
+# 后端
+server/bin/
+server/data/
+*.secret
+.arena-tmp/
+config.bat

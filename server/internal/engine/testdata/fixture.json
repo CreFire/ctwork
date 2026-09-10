@@ -1,0 +1,557 @@
+{
+ "generatedAt": "2026-09-10T09:37:07.920Z",
+ "engine": "src/game/engine.ts",
+ "cases": [
+  {
+   "name": "newbie",
+   "save": {
+    "version": 1,
+    "uid": "U1",
+    "createdAt": 1700000000000,
+    "lastTickAt": 1700000000000,
+    "run": {
+     "runId": 1,
+     "startedAt": 1700000000000,
+     "deadlineAt": 1700003600000,
+     "res": {
+      "energy": 0,
+      "material": 0,
+      "research": 0,
+      "special": 0
+     },
+     "route": null,
+     "buildings": {
+      "b_solar": 3
+     },
+     "research": {},
+     "clickUp": {},
+     "routeUp": {},
+     "firedStories": [],
+     "nextEventAt": 1700000150000,
+     "stats": {
+      "energyTotal": 0,
+      "clicks": 0
+     }
+    },
+    "meta": {
+     "cores": 0,
+     "coreUp": {},
+     "runs": 0,
+     "escapes": 0,
+     "deaths": 0,
+     "bestRemainSec": 0,
+     "totalEnergy": 0,
+     "totalClicks": 0,
+     "history": []
+    }
+   },
+   "rates": {
+    "energy": 1.5,
+    "material": 0,
+    "research": 0,
+    "special": 0
+   },
+   "clickPower": 1,
+   "autoClicks": 0,
+   "autoRate": 0,
+   "crit": 0
+  },
+  {
+   "name": "machine-mid",
+   "save": {
+    "version": 1,
+    "uid": "U1",
+    "createdAt": 1700000000000,
+    "lastTickAt": 1700000000000,
+    "run": {
+     "runId": 1,
+     "startedAt": 1700000000000,
+     "deadlineAt": 1700003600000,
+     "res": {
+      "energy": 0,
+      "material": 0,
+      "research": 0,
+      "special": 0
+     },
+     "route": "machine",
+     "buildings": {
+      "b_solar": 30,
+      "b_fossil": 12,
+      "b_lab": 4,
+      "b_quantum": 2,
+      "b_datacore": 7
+     },
+     "research": {
+      "r_command": true,
+      "r_survival": true,
+      "r_solar2": true,
+      "r_nuclear": true,
+      "r_automation": true,
+      "r_ai": true,
+      "r_orbital": true
+     },
+     "clickUp": {
+      "u_click": 3,
+      "u_auto": 2,
+      "u_crit": 1
+     },
+     "routeUp": {
+      "ru_m_furnace": 2,
+      "ru_m_drone": 1
+     },
+     "firedStories": [],
+     "nextEventAt": 1700000150000,
+     "stats": {
+      "energyTotal": 0,
+      "clicks": 0
+     }
+    },
+    "meta": {
+     "cores": 0,
+     "coreUp": {
+      "cu_ember": 2,
+      "cu_seeder": 1
+     },
+     "runs": 0,
+     "escapes": 0,
+     "deaths": 0,
+     "bestRemainSec": 0,
+     "totalEnergy": 0,
+     "totalClicks": 0,
+     "history": []
+    }
+   },
+   "rates": {
+    "energy": 439.088364,
+    "material": 0,
+    "research": 127.29599999999999,
+    "special": 10.08
+   },
+   "clickPower": 8,
+   "autoClicks": 5,
+   "autoRate": 40,
+   "crit": 0.04
+  },
+  {
+   "name": "swarm-late",
+   "save": {
+    "version": 1,
+    "uid": "U1",
+    "createdAt": 1700000000000,
+    "lastTickAt": 1700000000000,
+    "run": {
+     "runId": 1,
+     "startedAt": 1700000000000,
+     "deadlineAt": 1700003600000,
+     "res": {
+      "energy": 0,
+      "material": 0,
+      "research": 0,
+      "special": 0
+     },
+     "route": "swarm",
+     "buildings": {
+      "b_scavenge": 25,
+      "b_spire": 9,
+      "b_mine": 6,
+      "b_smelter": 2,
+      "b_study": 10
+     },
+     "research": {
+      "r_command": true,
+      "r_survival": true,
+      "r_automation": true,
+      "r_nano": true,
+      "r_gene": true
+     },
+     "clickUp": {
+      "u_auto": 3
+     },
+     "routeUp": {
+      "ru_s_breed": 3,
+      "ru_s_tide": 2,
+      "ru_s_acid": 1
+     },
+     "firedStories": [],
+     "nextEventAt": 1700000150000,
+     "stats": {
+      "energyTotal": 0,
+      "clicks": 0
+     }
+    },
+    "meta": {
+     "cores": 0,
+     "coreUp": {
+      "cu_forge": 3,
+      "cu_anchor": 1
+     },
+     "runs": 0,
+     "escapes": 0,
+     "deaths": 0,
+     "bestRemainSec": 0,
+     "totalEnergy": 0,
+     "totalClicks": 0,
+     "history": []
+    }
+   },
+   "rates": {
+    "energy": 0,
+    "material": 1519.7812531199997,
+    "research": 8.08704,
+    "special": 22.394879999999993
+   },
+   "clickPower": 2.5600000000000005,
+   "autoClicks": 3,
+   "autoRate": 7.6800000000000015,
+   "crit": 0
+  },
+  {
+   "name": "psionic-end",
+   "save": {
+    "version": 1,
+    "uid": "U1",
+    "createdAt": 1700000000000,
+    "lastTickAt": 1700000000000,
+    "run": {
+     "runId": 1,
+     "startedAt": 1700000000000,
+     "deadlineAt": 1700003600000,
+     "res": {
+      "energy": 0,
+      "material": 0,
+      "research": 0,
+      "special": 0
+     },
+     "route": "psionic",
+     "buildings": {
+      "b_solar": 40,
+      "b_fossil": 20,
+      "b_fission": 8,
+      "b_monolith": 12,
+      "b_quantum": 3
+     },
+     "research": {
+      "r_command": true,
+      "r_survival": true,
+      "r_solar2": true,
+      "r_nuclear": true,
+      "r_automation": true,
+      "r_ai": true,
+      "r_psy": true,
+      "r_antimatter": true
+     },
+     "clickUp": {
+      "u_click": 5,
+      "u_auto": 4,
+      "u_crit": 3
+     },
+     "routeUp": {
+      "ru_p_seer": 4,
+      "ru_p_void": 3,
+      "ru_p_warp": 2
+     },
+     "firedStories": [],
+     "nextEventAt": 1700000150000,
+     "stats": {
+      "energyTotal": 0,
+      "clicks": 0
+     }
+    },
+    "meta": {
+     "cores": 0,
+     "coreUp": {
+      "cu_ember": 4,
+      "cu_palace": 2
+     },
+     "runs": 0,
+     "escapes": 0,
+     "deaths": 0,
+     "bestRemainSec": 0,
+     "totalEnergy": 0,
+     "totalClicks": 0,
+     "history": []
+    }
+   },
+   "rates": {
+    "energy": 8297.151646579641,
+    "material": 0,
+    "research": 452.77128000000005,
+    "special": 33.435417599999994
+   },
+   "clickPower": 32,
+   "autoClicks": 4,
+   "autoRate": 128,
+   "crit": 0.32
+  }
+ ],
+ "offline": {
+  "save": {
+   "version": 1,
+   "uid": "U1",
+   "createdAt": 1700000000000,
+   "lastTickAt": 1700000000000,
+   "run": {
+    "runId": 1,
+    "startedAt": 1700000000000,
+    "deadlineAt": 1700003600000,
+    "res": {
+     "energy": 0,
+     "material": 0,
+     "research": 0,
+     "special": 0
+    },
+    "route": "machine",
+    "buildings": {
+     "b_solar": 30,
+     "b_fossil": 12,
+     "b_lab": 4,
+     "b_quantum": 2,
+     "b_datacore": 7
+    },
+    "research": {
+     "r_command": true,
+     "r_survival": true,
+     "r_solar2": true,
+     "r_nuclear": true,
+     "r_automation": true,
+     "r_ai": true,
+     "r_orbital": true
+    },
+    "clickUp": {
+     "u_click": 3,
+     "u_auto": 2,
+     "u_crit": 1
+    },
+    "routeUp": {
+     "ru_m_furnace": 2,
+     "ru_m_drone": 1
+    },
+    "firedStories": [],
+    "nextEventAt": 1700000150000,
+    "stats": {
+     "energyTotal": 0,
+     "clicks": 0
+    }
+   },
+   "meta": {
+    "cores": 0,
+    "coreUp": {
+     "cu_ember": 2
+    },
+    "runs": 0,
+    "escapes": 0,
+    "deaths": 0,
+    "bestRemainSec": 0,
+    "totalEnergy": 0,
+    "totalClicks": 0,
+    "history": []
+   }
+  },
+  "now": 1700001800000,
+  "lastTickAt": 1700000000000,
+  "gains": {
+   "energy": 431179.52760000003,
+   "material": 0,
+   "research": 114566.4,
+   "special": 9072
+  },
+  "seconds": 1800
+ },
+ "rewards": [
+  {
+   "name": "escape-30min",
+   "save": {
+    "version": 1,
+    "uid": "U1",
+    "createdAt": 1700000000000,
+    "lastTickAt": 1700000000000,
+    "run": {
+     "runId": 1,
+     "startedAt": 1700000000000,
+     "deadlineAt": 1700003600000,
+     "res": {
+      "energy": 0,
+      "material": 0,
+      "research": 0,
+      "special": 0
+     },
+     "route": "machine",
+     "buildings": {
+      "b_solar": 30
+     },
+     "research": {
+      "r_command": true
+     },
+     "clickUp": {},
+     "routeUp": {},
+     "firedStories": [],
+     "nextEventAt": 1700000150000,
+     "stats": {
+      "energyTotal": 0,
+      "clicks": 0
+     }
+    },
+    "meta": {
+     "cores": 0,
+     "coreUp": {},
+     "runs": 0,
+     "escapes": 0,
+     "deaths": 0,
+     "bestRemainSec": 0,
+     "totalEnergy": 0,
+     "totalClicks": 0,
+     "history": []
+    }
+   },
+   "escaped": true,
+   "now": 1700001800000,
+   "total": 6
+  },
+  {
+   "name": "died-123M",
+   "save": {
+    "version": 1,
+    "uid": "U1",
+    "createdAt": 1700000000000,
+    "lastTickAt": 1700000000000,
+    "run": {
+     "runId": 1,
+     "startedAt": 1700000000000,
+     "deadlineAt": 1700003600000,
+     "res": {
+      "energy": 0,
+      "material": 0,
+      "research": 0,
+      "special": 0
+     },
+     "route": "machine",
+     "buildings": {
+      "b_solar": 30,
+      "b_fossil": 12,
+      "b_lab": 4,
+      "b_quantum": 2,
+      "b_datacore": 7
+     },
+     "research": {
+      "r_command": true,
+      "r_survival": true,
+      "r_solar2": true,
+      "r_nuclear": true,
+      "r_automation": true,
+      "r_ai": true,
+      "r_orbital": true
+     },
+     "clickUp": {
+      "u_click": 3,
+      "u_auto": 2,
+      "u_crit": 1
+     },
+     "routeUp": {
+      "ru_m_furnace": 2,
+      "ru_m_drone": 1
+     },
+     "firedStories": [],
+     "nextEventAt": 1700000150000,
+     "stats": {
+      "energyTotal": 123456789,
+      "clicks": 0
+     }
+    },
+    "meta": {
+     "cores": 0,
+     "coreUp": {
+      "cu_ember": 2
+     },
+     "runs": 0,
+     "escapes": 0,
+     "deaths": 0,
+     "bestRemainSec": 0,
+     "totalEnergy": 0,
+     "totalClicks": 0,
+     "history": []
+    }
+   },
+   "escaped": false,
+   "now": 1700003601000,
+   "total": 6
+  }
+ ],
+ "costs": [
+  {
+   "name": "b_fossil@7",
+   "kind": "scaleCost",
+   "base": {
+    "energy": 110,
+    "material": 12
+   },
+   "scale": 1.15,
+   "owned": 7,
+   "expect": {
+    "energy": 293,
+    "material": 32
+   },
+   "scalar": 0
+  },
+  {
+   "name": "b_solar@0",
+   "kind": "scaleCost",
+   "base": {
+    "energy": 15
+   },
+   "scale": 1.15,
+   "owned": 0,
+   "expect": {
+    "energy": 15
+   },
+   "scalar": 0
+  },
+  {
+   "name": "b_antimatter@13",
+   "kind": "scaleCost",
+   "base": {
+    "energy": 520000,
+    "material": 7000
+   },
+   "scale": 1.18,
+   "owned": 13,
+   "expect": {
+    "energy": 4471667,
+    "material": 60196
+   },
+   "scalar": 0
+  },
+  {
+   "name": "u_click@9",
+   "kind": "specialCost",
+   "base": {
+    "energy": 40
+   },
+   "scale": 3.1,
+   "owned": 9,
+   "expect": {},
+   "scalar": 1057585
+  },
+  {
+   "name": "ru_s_breed@4",
+   "kind": "specialCost",
+   "base": {
+    "energy": 45
+   },
+   "scale": 1.85,
+   "owned": 4,
+   "expect": {},
+   "scalar": 528
+  },
+  {
+   "name": "cu_palace@5",
+   "kind": "coreCost",
+   "base": {
+    "energy": 6
+   },
+   "scale": 4,
+   "owned": 5,
+   "expect": {},
+   "scalar": 26
+  }
+ ]
+}

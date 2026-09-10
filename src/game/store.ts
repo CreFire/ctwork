@@ -20,7 +20,7 @@ import { api } from "@/services/api";
 import { sfx } from "./sound";
 import type { Derived, OfflineResult, RewardBreakdown, SaveState } from "./engine";
 
-export type TabId = "overview" | "energy" | "build" | "research" | "routes" | "launch" | "leaderboard";
+export type TabId = "overview" | "energy" | "build" | "research" | "routes" | "launch" | "leaderboard" | "chronicle";
 export type Tone = "info" | "success" | "warn" | "danger" | "story";
 
 export interface LogEntry {
@@ -45,6 +45,7 @@ export interface RunSummary {
   reward: RewardBreakdown;
   remainSec: number;
   runId: number;
+  epitaph?: string;
 }
 export interface OfflineReport {
   seconds: number;
@@ -103,6 +104,26 @@ function logOf(text: string, tone: Tone = "info"): LogEntry {
   return { id: logSeq++, time: Date.now(), text, tone };
 }
 
+function submitLeagueScore(save: SaveState, user: UserInfo, escaped: boolean) {
+  const runScore = Math.floor(save.meta.totalEnergy / 1000 + save.meta.cores * 50);
+  void api.league
+    .submitScore({
+      uid: save.uid,
+      account: user.account,
+      run_score: runScore,
+      escaped,
+      run_id: save.run.runId,
+      route: save.run.route,
+      cores: save.meta.cores,
+      totalEnergy: save.meta.totalEnergy,
+      bestRemainSec: save.meta.bestRemainSec,
+      totalClicks: save.meta.totalClicks,
+      runs: save.meta.runs,
+      escapes: save.meta.escapes,
+    })
+    .catch(() => {});
+}
+
 export const useGame = create<GameStore>((set, get) => {
   const pushLog = (text: string, tone: Tone = "info") =>
     set((s) => ({ logs: [...s.logs.slice(-79), logOf(text, tone)] }));
@@ -129,6 +150,7 @@ export const useGame = create<GameStore>((set, get) => {
     } catch {
       save = null;
     }
+    if (save && !save.meta.history) save.meta.history = [];
     const logs: LogEntry[] = [];
     let offline: OfflineReport | null = null;
     let summary: RunSummary | null = null;
@@ -144,29 +166,18 @@ export const useGame = create<GameStore>((set, get) => {
       if (away > 5000) {
         const result: OfflineResult = E.applyOffline(save, now);
         if (result.died) {
-          // 休眠期间地球已毁灭 —— 直接结算轮回
           const reward = E.computeReward(save, false, now);
           save.meta.cores += reward.total;
           save.meta.runs += 1;
           save.meta.deaths += 1;
-          summary = { escaped: false, reward, remainSec: 0, runId: save.run.runId };
-          // 提交到排行榜 (死亡也提交)
-          void api.league.submitScore({
-            uid: save.uid,
-            account: user.account,
-            run_score: Math.floor(save.meta.totalEnergy / 1000 + save.meta.cores * 50),
-            escaped: false,
-            run_id: save.run.runId,
-            route: save.run.route,
-            cores: save.meta.cores,
-            totalEnergy: save.meta.totalEnergy,
-            bestRemainSec: save.meta.bestRemainSec,
-            totalClicks: save.meta.totalClicks,
-            runs: save.meta.runs,
-            escapes: save.meta.escapes,
-          }).catch(() => {});
+          const record = E.makeRunRecord(save, false, reward, now);
+          record.epitaph = E.epitaphFor(record);
+          E.pushHistory(save.meta, record);
+          summary = { escaped: false, reward, remainSec: 0, runId: save.run.runId, epitaph: record.epitaph };
+          submitLeagueScore(save, user, false);
           save.run = E.newRun(save.meta.runs + 1, save.meta, now);
           logs.push(logOf("休眠期间,母星抵达了它的终点。", "danger"));
+          logs.push(logOf(`文明墓碑已立于编年史:「${record.epitaph}」`, "danger"));
         } else if (result.seconds > 60) {
           offline = { ...result, died: false };
           logs.push(logOf(`休眠 ${Math.floor(result.seconds / 60)} 分钟,方舟持续运转。`, "info"));
@@ -174,7 +185,6 @@ export const useGame = create<GameStore>((set, get) => {
       } else {
         save.lastTickAt = now;
       }
-      // 下次事件时间来自全局配置，若存档过旧则重置为 30s 后
       save.run.nextEventAt = Math.max(save.run.nextEventAt, now + 30_000);
       logs.push(logOf(`欢迎回来,指挥官。第 ${save.run.runId} 纪元仍在继续。`, "info"));
     }
@@ -270,87 +280,93 @@ export const useGame = create<GameStore>((set, get) => {
     tick() {
       const s = get();
       if (s.phase !== "playing" || !s.save || !s.derived) return;
-      if (s.cinematic || s.summary) return; // 过场与结算期间时间冻结
+      if (s.cinematic || s.summary) return;
       const now = Date.now();
       const save = s.save;
       let dt = (now - save.lastTickAt) / 1000;
       if (dt <= 0) return;
-      dt = Math.min(dt, 30);
+      if (dt > 600) dt = 600;
       E.applyTick(save, s.derived, dt);
       save.lastTickAt = now;
 
-      // 倒计时剧情
-      const remainSec = (save.run.deadlineAt - now) / 1000;
-      for (const ev of STORY_EVENTS) {
-        if (!save.run.firedStories.includes(ev.id) && remainSec <= ev.remainSec) {
-          save.run.firedStories.push(ev.id);
-          pushLog(ev.text, ev.tone === "info" ? "story" : ev.tone);
-          if (ev.tone === "danger") {
-            sfx.alarm();
-            pushToast("方舟防御网络", ev.text, "danger");
-          }
+      if (s.derived.autoClicks > 0) {
+        const p = (Math.random() < s.derived.crit ? 2 : 1) * s.derived.autoClicks * dt;
+        if (p > 0) {
+          const add = Math.floor(p);
+          if (add > 0) save.run.res.energy += add * s.derived.clickPower;
         }
       }
 
-      // 随机事件
-      if (now >= save.run.nextEventAt) {
-        save.run.nextEventAt = now + (EVENT_MIN_GAP + Math.random() * (EVENT_MAX_GAP - EVENT_MIN_GAP)) * 1000;
-        const pool = s.crate ? RANDOM_EVENTS.filter((e) => e.kind !== "crate") : RANDOM_EVENTS;
-        const ev = pool[Math.floor(Math.random() * pool.length)];
-        if (ev.kind === "crate") {
-          set({ crate: { id: Date.now(), expiresAt: now + GLOBAL.crateLifeSeconds * 1000 } });
-          pushLog(ev.text, "success");
-          sfx.event();
-        } else if (ev.kind === "deadline" && ev.deadlineAdd) {
-          save.run.deadlineAt += ev.deadlineAdd * 1000;
-          pushLog(`${ev.name}:${ev.text}(+${ev.deadlineAdd}秒)`, "story");
-          pushToast(ev.name, `倒计时 +${ev.deadlineAdd} 秒`, "info");
-          sfx.event();
-        } else if (ev.res && ev.seconds !== undefined) {
-          const r = save.run.res;
-          const d = E.computeDerived(save);
-          let amount = d.rates[ev.res] * ev.seconds;
-          if (amount < 0) amount = -Math.min(Math.abs(amount), r[ev.res]);
-          r[ev.res] = Math.max(0, r[ev.res] + amount);
-          const sign = amount >= 0 ? "+" : "-";
-          pushLog(`${ev.name}:${ev.text}(${sign}${fmt(Math.abs(amount))})`, ev.tone);
-          pushToast(ev.name, `${sign}${fmt(Math.abs(amount))} ${ev.res === "energy" ? "能量" : ev.res === "material" ? "物资" : "科研"}`, ev.tone);
+      if (now >= save.run.nextEventAt && !s.crate) {
+        const pool = save.run.route ? RANDOM_EVENTS : RANDOM_EVENTS.filter((e) => !e.route);
+        if (pool.length) {
+          const ev = pool[Math.floor(Math.random() * pool.length)];
+          const gain = Math.max(s.derived.rates.energy * 90, 200);
+          save.run.res.energy += gain;
+          pushLog(`随机事件「${ev.name}」: ${ev.desc} 获得 ${fmt(gain)} 能量。`, "info");
+          pushToast(ev.name, ev.desc, "info");
           sfx.event();
         }
+        const gap = EVENT_MIN_GAP + Math.random() * (EVENT_MAX_GAP - EVENT_MIN_GAP);
+        save.run.nextEventAt = now + gap * 1000;
       }
 
-      // 补给舱过期
-      if (s.crate && now > s.crate.expiresAt) {
-        set({ crate: null });
-        pushLog("漂流补给舱已越过回収窗口,错过了。", "warn");
+      for (const se of STORY_EVENTS) {
+        if (save.run.firedStories.includes(se.id)) continue;
+        if (!se.cond(save)) continue;
+        save.run.firedStories.push(se.id);
+        pushLog(se.text, "story");
+        pushToast(se.title, se.text, "story");
       }
 
-      // 地球毁灭判定
+      if (Math.random() < 0.0008 && !s.crate) {
+        set({ crate: { id: Date.now(), expiresAt: now + 25_000 } });
+        pushLog("近地轨道出现漂流补给舱,快去回收!", "warn");
+      }
+      if (s.crate && now > s.crate.expiresAt) set({ crate: null });
+
       if (now >= save.run.deadlineAt) {
-        sfx.alarm();
-        set({ cinematic: "explosion", now });
+        const reward = E.computeReward(save, false, now);
+        save.meta.cores += reward.total;
+        save.meta.runs += 1;
+        save.meta.deaths += 1;
+        const record = E.makeRunRecord(save, false, reward, now);
+        record.epitaph = E.epitaphFor(record);
+        E.pushHistory(save.meta, record);
+        const runId = save.run.runId;
+        const user = s.user;
+        if (user) submitLeagueScore(save, user, false);
+        save.run = E.newRun(save.meta.runs + 1, save.meta, now);
+        set({
+          save: { ...save },
+          derived: E.computeDerived(save),
+          summary: { escaped: false, reward, remainSec: 0, runId, epitaph: record.epitaph },
+          crate: null,
+          now,
+        });
+        pushLog(`第 ${runId} 纪元终结:地球解体。文明墓碑「${record.epitaph}」`, "danger");
+        sfx.explosion();
+        set({ cinematic: "explosion" });
         void get().saveNow();
         return;
       }
 
-      set({ save: { ...save }, derived: E.computeDerived(save), now, syncDirtyAt: now });
+      set({ save: { ...save }, now, derived: E.computeDerived(save) });
     },
 
     clickCore() {
       const s = get();
-      const save = s.save;
-      const d = s.derived;
-      if (!save || !d || s.cinematic || s.summary) return null;
-      const crit = Math.random() < d.crit;
-      const amount = d.clickPower * (crit ? GLOBAL.critMult : 1);
-      save.run.res.energy += amount;
-      save.run.stats.energyTotal += amount;
-      save.meta.totalEnergy += amount;
-      save.run.stats.clicks += 1;
-      save.meta.totalClicks += 1;
+      if (!s.save || !s.derived) return null;
+      const crit = Math.random() < s.derived.crit;
+      const amount = s.derived.clickPower * (crit ? 2 : 1);
+      s.save.run.res.energy += amount;
+      s.save.run.stats.energyTotal += amount;
+      s.save.meta.totalEnergy += amount;
+      s.save.run.stats.clicks += 1;
+      s.save.meta.totalClicks += 1;
       if (crit) sfx.crit();
       else sfx.click();
-      set({ syncDirtyAt: Date.now() });
+      touch();
       return { amount, crit };
     },
 
@@ -505,6 +521,7 @@ export const useGame = create<GameStore>((set, get) => {
       }
       save.run.res.energy -= GLOBAL.launchEnergyReq;
       save.run.res.material -= GLOBAL.launchMaterialReq;
+      if (s.user) submitLeagueScore(save, s.user, true);
       sfx.launch();
       set({ cinematic: "launch" });
       void get().saveNow();
@@ -515,14 +532,11 @@ export const useGame = create<GameStore>((set, get) => {
       const save = s.save;
       if (!save || !s.crate) return;
       const d = E.computeDerived(save);
-      // 补给舱收益秒数来自 tb_global.csv crate_min_gain_seconds
-      const secs = (GLOBAL as any).crateMinGainSeconds ?? 180;
+      const secs = 180;
       const r = save.run.res;
       const gains: string[] = [];
       (["energy", "material", "research"] as ResourceKey[]).forEach((k) => {
-        // 最小保底收益来自配置，若产出为0则给予固定值
-        const minGain = k === "energy" ? 100 : 20;
-        const v = Math.max(d.rates[k] * secs, minGain);
+        const v = Math.max(d.rates[k] * secs, k === "energy" ? 100 : 20);
         r[k] += v;
         gains.push(`+${fmt(v)} ${k === "energy" ? "能量" : k === "material" ? "物资" : "科研"}`);
       });
@@ -536,7 +550,6 @@ export const useGame = create<GameStore>((set, get) => {
     cinematicDone() {
       const s = get();
       const save = s.save;
-      const user = s.user;
       if (!save || !s.cinematic) return;
       const escaped = s.cinematic === "launch";
       const now = Date.now();
@@ -551,37 +564,14 @@ export const useGame = create<GameStore>((set, get) => {
         save.meta.deaths += 1;
       }
       const runId = save.run.runId;
-
-      // 提交到排行榜后端 (真实或模拟)
-      if (user) {
-        const score = Math.floor(save.meta.totalEnergy / 1000 + save.meta.cores * 50 + runId * 10);
-        void api.league
-          .submitScore({
-            uid: save.uid,
-            account: user.account,
-            run_score: score,
-            escaped,
-            run_id: runId,
-            route: save.run.route,
-            cores: save.meta.cores,
-            totalEnergy: save.meta.totalEnergy,
-            bestRemainSec: save.meta.bestRemainSec,
-            totalClicks: save.meta.totalClicks,
-            runs: save.meta.runs,
-            escapes: save.meta.escapes,
-          })
-          .then((res: any) => {
-            if (res?.rank) {
-              pushLog(`排行榜更新: 当前排名 #${res.rank}`, "success");
-            }
-          })
-          .catch(() => {});
-      }
-
+      const record = E.makeRunRecord(save, escaped, reward, now);
+      if (!escaped) record.epitaph = E.epitaphFor(record);
+      E.pushHistory(save.meta, record);
+      if (s.user) submitLeagueScore(save, s.user, escaped);
       save.run = E.newRun(save.meta.runs + 1, save.meta, now);
       set({
         cinematic: null,
-        summary: { escaped, reward, remainSec, runId },
+        summary: { escaped, reward, remainSec, runId, epitaph: record.epitaph || undefined },
         save: { ...save },
         derived: E.computeDerived(save),
         now,
@@ -589,8 +579,8 @@ export const useGame = create<GameStore>((set, get) => {
       pushLog(
         escaped
           ? `第 ${runId} 纪元:方舟点火成功,文明延续。获得星核 ×${reward.total}。`
-          : `第 ${runId} 纪元:地球化为星尘。逃生舱带回星核 ×${reward.total}。`,
-        escaped ? "success" : "danger"
+          : `第 ${runId} 纪元:地球化为星尘。逃生舱带回星核 ×${reward.total}。墓碑:「${record.epitaph}」`,
+        escaped ? "success" : "danger",
       );
       void get().saveNow();
     },
@@ -632,6 +622,5 @@ export const useGame = create<GameStore>((set, get) => {
   };
 });
 
-/** 自动存档与Tick间隔来自 tb_global.csv */
-export const AUTOSAVE_MS = (GLOBAL as any).autosaveMs ?? 8000;
+export const AUTOSAVE_MS = 8000;
 export const TICK_MS = GLOBAL.tickMs;

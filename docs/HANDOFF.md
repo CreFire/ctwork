@@ -36,14 +36,19 @@
 | 10 | 后端架构蓝图(dueGame + Go + MongoDB + 协议 + 反作弊) | `docs/ARCHITECTURE.md` | ✅ |
 | 11 | Luban 配置表样例 | `server/luban/*.csv` | ✅ |
 | 12 | 本地 Git 仓库初始化 | `git init` + 首次提交 | ✅ |
+| 13 | dueGame 后端 v0.1(五接口/反作弊/双端一致性/真排行榜) | `server/` 全套 + `scripts/gen-fixture.mjs` + `scripts/e2e.py` | ✅ |
+| 14 | 文明编年史/墓碑/快照(RunRecord 落笔、墓志铭、现状总览) | `src/components/game/ChronicleTab.tsx` + engine/store/Go 同步 | ✅ |
 
 **待办(接手从这里开始)**
 
-- [ ] 推送到 GitHub(需要仓库地址 + Token,见 README/会话记录)
-- [ ] dueGame 后端:v0.1 五个 HTTP 接口(协议见 `docs/ARCHITECTURE.md` §2.3)
-- [ ] Luban 工程化:Excel 表 + `gen` 导出 Go/TS,替换 `src/game/config.ts`
-- [ ] 服务端权威校验:资源增量上限、购买重算、服务端离线结算
-- [ ] v0.2:WebSocket 长连接、真排行榜、赛季
+- [x] 推送到 GitHub(仓库:`CreFire/ctwork`)
+- [x] dueGame 后端:v0.1 HTTP 五接口(协议见 `docs/ARCHITECTURE.md` §2.3)
+      → 已实现于 `server/`(Go 单进程网关:auth/player/league + JWT + 限流 + 反作弊校验,
+        存储 filestore 默认 / mongostore 可选;双端公式一致性由 `scripts/gen-fixture.mjs`
+        + `server/internal/engine/engine_test.go` 保证)
+- [ ] Luban 工程化:Excel 表 + `gen` 导出 Go/TS,替换 `src/game/config.ts` 与 `server/internal/engine/config.go`
+- [x] 服务端权威校验:资源增量上限、购买重算(反作弊 v0.1 已实现,见 README)
+- [ ] v0.2:WebSocket 长连接、服务端离线结算、赛季
 - [ ] v0.3:联机 PvE「流浪黑洞」讨伐
 
 ## 3. 一键复现(给新 AI 会话)

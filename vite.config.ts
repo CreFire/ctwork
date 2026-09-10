@@ -20,14 +20,16 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     proxy: {
-      "/api": {
-        target: "http://localhost:3001",
-        changeOrigin: true,
-      },
+      // dev 前端 → 本地 dueGame 网关(server/,默认 :8090)
+      // 若使用 Node 排行榜后端，可改为 http://localhost:3001
+      "/api": { target: "http://127.0.0.1:8090", changeOrigin: true },
     },
   },
   preview: {
     host: "0.0.0.0",
     port: 4173,
+    proxy: {
+      "/api": { target: "http://127.0.0.1:8090", changeOrigin: true },
+    },
   },
 });
