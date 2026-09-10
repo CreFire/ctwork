@@ -16,11 +16,11 @@ import {
 } from "./config";
 import * as E from "./engine";
 import { fmt } from "./fmt";
-import { server } from "@/services/mockServer";
+import { api } from "@/services/api";
 import { sfx } from "./sound";
 import type { Derived, OfflineResult, RewardBreakdown, SaveState } from "./engine";
 
-export type TabId = "overview" | "energy" | "build" | "research" | "routes" | "launch";
+export type TabId = "overview" | "energy" | "build" | "research" | "routes" | "launch" | "leaderboard";
 export type Tone = "info" | "success" | "warn" | "danger" | "story";
 
 export interface LogEntry {
@@ -124,7 +124,7 @@ export const useGame = create<GameStore>((set, get) => {
     const now = Date.now();
     let save: SaveState | null = null;
     try {
-      const json = await server.loadSave(user.uid);
+      const json = await api.loadSave(user.uid);
       if (json) save = JSON.parse(json) as SaveState;
     } catch {
       save = null;
@@ -138,7 +138,7 @@ export const useGame = create<GameStore>((set, get) => {
       logs.push(logOf(`身份验证完成,UID ${user.uid} 已绑定。`, "success"));
       logs.push(logOf("—— 地球解体倒计时,已启动 ——", "story"));
       logs.push(logOf("「欢迎回来,指挥官。方舟停泊在近地轨道,一切听你调遣。」", "story"));
-      await server.writeSave(user.uid, JSON.stringify(save));
+      await api.writeSave(user.uid, JSON.stringify(save));
     } else {
       const away = now - save.lastTickAt;
       if (away > 5000) {
@@ -150,6 +150,21 @@ export const useGame = create<GameStore>((set, get) => {
           save.meta.runs += 1;
           save.meta.deaths += 1;
           summary = { escaped: false, reward, remainSec: 0, runId: save.run.runId };
+          // 提交到排行榜 (死亡也提交)
+          void api.league.submitScore({
+            uid: save.uid,
+            account: user.account,
+            run_score: Math.floor(save.meta.totalEnergy / 1000 + save.meta.cores * 50),
+            escaped: false,
+            run_id: save.run.runId,
+            route: save.run.route,
+            cores: save.meta.cores,
+            totalEnergy: save.meta.totalEnergy,
+            bestRemainSec: save.meta.bestRemainSec,
+            totalClicks: save.meta.totalClicks,
+            runs: save.meta.runs,
+            escapes: save.meta.escapes,
+          }).catch(() => {});
           save.run = E.newRun(save.meta.runs + 1, save.meta, now);
           logs.push(logOf("休眠期间,母星抵达了它的终点。", "danger"));
         } else if (result.seconds > 60) {
@@ -209,7 +224,7 @@ export const useGame = create<GameStore>((set, get) => {
     async login(account, password) {
       set({ authBusy: true, authError: null });
       try {
-        const res = await server.loginOrRegister(account, password);
+        const res = await api.loginOrRegister(account, password);
         await boot({ uid: res.uid, account: res.account, createdAt: res.createdAt }, res.isNew);
       } catch (e) {
         set({ authBusy: false, authError: e instanceof Error ? e.message : "连接失败" });
@@ -217,12 +232,12 @@ export const useGame = create<GameStore>((set, get) => {
     },
 
     async reconnect() {
-      const session = server.resolveSession();
+      const session = api.resolveSession();
       if (!session) return;
       set({ phase: "boot" });
-      const profile = await server.profile(session.uid);
+      const profile = await api.profile(session.uid);
       if (!profile) {
-        server.logout();
+        api.logout();
         set({ phase: "auth" });
         return;
       }
@@ -231,7 +246,7 @@ export const useGame = create<GameStore>((set, get) => {
 
     logout() {
       void get().saveNow();
-      server.logout();
+      api.logout();
       set({
         phase: "auth",
         user: null,
@@ -521,6 +536,7 @@ export const useGame = create<GameStore>((set, get) => {
     cinematicDone() {
       const s = get();
       const save = s.save;
+      const user = s.user;
       if (!save || !s.cinematic) return;
       const escaped = s.cinematic === "launch";
       const now = Date.now();
@@ -535,6 +551,33 @@ export const useGame = create<GameStore>((set, get) => {
         save.meta.deaths += 1;
       }
       const runId = save.run.runId;
+
+      // 提交到排行榜后端 (真实或模拟)
+      if (user) {
+        const score = Math.floor(save.meta.totalEnergy / 1000 + save.meta.cores * 50 + runId * 10);
+        void api.league
+          .submitScore({
+            uid: save.uid,
+            account: user.account,
+            run_score: score,
+            escaped,
+            run_id: runId,
+            route: save.run.route,
+            cores: save.meta.cores,
+            totalEnergy: save.meta.totalEnergy,
+            bestRemainSec: save.meta.bestRemainSec,
+            totalClicks: save.meta.totalClicks,
+            runs: save.meta.runs,
+            escapes: save.meta.escapes,
+          })
+          .then((res: any) => {
+            if (res?.rank) {
+              pushLog(`排行榜更新: 当前排名 #${res.rank}`, "success");
+            }
+          })
+          .catch(() => {});
+      }
+
       save.run = E.newRun(save.meta.runs + 1, save.meta, now);
       set({
         cinematic: null,
@@ -562,7 +605,7 @@ export const useGame = create<GameStore>((set, get) => {
       const s = get();
       if (!s.user || !s.save) return;
       try {
-        await server.writeSave(s.user.uid, JSON.stringify(s.save));
+        await api.writeSave(s.user.uid, JSON.stringify(s.save));
         set({ syncSavedAt: Date.now() });
       } catch {
         /* 静默失败,下个周期重试 */
@@ -572,9 +615,9 @@ export const useGame = create<GameStore>((set, get) => {
     async wipeAll() {
       const s = get();
       if (!s.user) return;
-      await server.wipeSave(s.user.uid);
+      await api.wipeSave(s.user.uid);
       const save = E.newSave(s.user.uid, Date.now());
-      await server.writeSave(s.user.uid, JSON.stringify(save));
+      await api.writeSave(s.user.uid, JSON.stringify(save));
       set({
         save,
         derived: E.computeDerived(save),

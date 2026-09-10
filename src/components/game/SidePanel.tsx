@@ -1,10 +1,12 @@
-import { useMemo } from "react";
-import { AlarmClock, Trophy, TerminalSquare } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlarmClock, Trophy, TerminalSquare, RefreshCw, Wifi, WifiOff, Crown, Rocket, Skull } from "lucide-react";
 import EarthCanvas from "@/components/EarthCanvas";
-import { GLOBAL, LEADERBOARD_NAMES } from "@/game/config";
+import { GLOBAL } from "@/game/config";
 import { fmt, fmtClock } from "@/game/fmt";
 import { useGame } from "@/game/store";
+import { useLeague } from "@/game/leagueStore";
 import type { Tone } from "@/game/store";
+import { isRealApi } from "@/services/api";
 
 const TONE_CLASS: Record<Tone, string> = {
   info: "text-slate-400",
@@ -14,46 +16,190 @@ const TONE_CLASS: Record<Tone, string> = {
   story: "text-cyan-300/90 italic",
 };
 
-function hashStr(s: string): number {
-  let h = 7;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return h;
+function RouteBadge({ route }: { route: string | null }) {
+  if (!route) return <span className="num text-[9px] text-slate-600">-</span>;
+  const map: Record<string, { label: string; color: string }> = {
+    machine: { label: "机", color: "text-cyan-300 border-cyan-400/20 bg-cyan-400/10" },
+    swarm: { label: "蜂", color: "text-amber-300 border-amber-400/20 bg-amber-400/10" },
+    psionic: { label: "灵", color: "text-violet-300 border-violet-400/20 bg-violet-400/10" },
+  };
+  const m = map[route] || { label: "?", color: "text-slate-500" };
+  return <span className={`num rounded border px-1 py-0 text-[9px] ${m.color}`}>{m.label}</span>;
 }
 
 function Leaderboard() {
   const save = useGame((s) => s.save);
   const user = useGame((s) => s.user);
+  const { top, myRank, myRankNumber, total, source, loading, error, lastFetchedAt, fetch, refresh } = useLeague();
+  const [showFull, setShowFull] = useState(false);
+
+  // 初次加载与定时刷新
+  useEffect(() => {
+    if (!save || !user) return;
+    void fetch(save, user.uid, user.account);
+  }, [save?.meta.totalEnergy, user?.uid]); // 当总能量变化时刷新（模拟实时）
+
+  const handleRefresh = () => {
+    if (!save || !user) return;
+    void refresh(save, user.uid, user.account);
+  };
+
   const rows = useMemo(() => {
-    if (!save || !user) return [];
-    const mine = save.meta.totalEnergy + save.run.res.energy;
-    const list = LEADERBOARD_NAMES.slice(0, 9).map((name, i) => {
-      const h = hashStr(user.uid + name);
-      const factor = 0.35 + ((h % 100) / 100) * 2.4 - i * 0.1;
-      return { name, score: Math.max(1, mine * Math.max(0.05, factor)), me: false };
-    });
-    list.push({ name: `${user.account} (你)`, score: Math.max(1, mine), me: true });
-    return list.sort((a, b) => b.score - a.score).slice(0, 8);
-  }, [save, user]);
+    if (top.length > 0) return top;
+    return [];
+  }, [top]);
 
   return (
     <div className="panel rounded-lg p-4">
-      <div className="mb-2.5 flex items-center gap-2">
-        <Trophy className="size-3.5 text-amber-300/80" />
-        <span className="hud-tag">方舟网络 · 产能榜</span>
-      </div>
-      <div className="space-y-1">
-        {rows.map((r, i) => (
-          <div
-            key={r.name}
-            className={`flex items-center gap-2 rounded px-1.5 py-1 text-[11px] ${r.me ? "bg-cyan-400/10 text-cyan-100" : "text-slate-500"}`}
+      <div className="mb-2.5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Trophy className="size-3.5 text-amber-300/80" />
+          <span className="hud-tag">方舟网络 · 产能榜</span>
+          {source === "real" ? (
+            <span className="flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] text-emerald-300">
+              <Wifi className="size-2.5" /> LIVE
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 rounded bg-slate-500/10 px-1.5 py-0.5 text-[9px] text-slate-500">
+              <WifiOff className="size-2.5" /> MOCK
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {myRankNumber && (
+            <span className="num text-[10px] text-cyan-300/80">
+              #{myRankNumber}/{total}
+            </span>
+          )}
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="rounded border border-white/10 bg-white/5 p-1 text-slate-500 hover:bg-white/10 hover:text-slate-300 disabled:opacity-50"
+            title="刷新排行榜"
           >
-            <span className={`num w-4 text-[10px] ${i === 0 ? "text-amber-300" : r.me ? "text-cyan-300" : "text-slate-600"}`}>{i + 1}</span>
-            <span className="flex-1 truncate">{r.name}</span>
-            <span className="num">{r.score >= 10000 ? fmt(r.score) : Math.floor(r.score)}</span>
+            <RefreshCw className={`size-3 ${loading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* 错误提示 */}
+      {error && (
+        <div className="mb-2 rounded border border-red-400/20 bg-red-500/10 px-2 py-1 text-[10px] text-red-300">
+          {error}
+        </div>
+      )}
+
+      {/* 榜单 */}
+      <div className="space-y-1">
+        {rows.length === 0 ? (
+          <div className="py-6 text-center text-[11px] text-slate-600">
+            {loading ? "正在同步方舟网络..." : "暂无数据，等待第一位开拓者"}
+          </div>
+        ) : (
+          rows.map((r, i) => (
+            <div
+              key={`${r.uid}-${i}`}
+              className={`flex items-center gap-2 rounded px-1.5 py-1.5 text-[11px] transition ${
+                r.me ? "bg-cyan-400/10 text-cyan-100 ring-1 ring-cyan-400/20" : "text-slate-500 hover:bg-white/5"
+              }`}
+            >
+              <span
+                className={`num flex w-5 items-center justify-center text-[10px] ${
+                  i === 0 ? "text-amber-300" : i === 1 ? "text-slate-300" : i === 2 ? "text-amber-600" : r.me ? "text-cyan-300" : "text-slate-600"
+                }`}
+              >
+                {i === 0 ? <Crown className="size-3" /> : i + 1}
+              </span>
+              <RouteBadge route={r.route} />
+              <span className="flex-1 truncate">
+                {r.account}
+                {r.escaped ? <Rocket className="ml-1 inline size-2.5 text-emerald-400" /> : <Skull className="ml-1 inline size-2.5 text-slate-600" />}
+              </span>
+              <span className="num text-[10px]">{r.run_score >= 10000 ? fmt(r.run_score) : Math.floor(r.run_score)}</span>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* 我的排名 (若不在 Top8) */}
+      {myRank && myRankNumber && myRankNumber > 8 && (
+        <div className="mt-2 border-t border-white/5 pt-2">
+          <div className="flex items-center gap-2 rounded bg-cyan-400/10 px-1.5 py-1 text-[11px] text-cyan-100 ring-1 ring-cyan-400/20">
+            <span className="num w-5 text-center text-[10px] text-cyan-300">#{myRankNumber}</span>
+            <RouteBadge route={myRank.route} />
+            <span className="flex-1 truncate">{myRank.account}</span>
+            <span className="num text-[10px]">{fmt(myRank.run_score)}</span>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-2.5 flex items-center justify-between text-[10px]">
+        <p className="leading-4 text-slate-600">
+          {source === "real" ? `联机实时榜 · ${total} 位开拓者` : "模拟节点 · 正式赛季由 dueGame 集群结算"}
+          {lastFetchedAt && <span className="ml-1 text-slate-700">· {new Date(lastFetchedAt).toLocaleTimeString()}</span>}
+        </p>
+        <button
+          onClick={() => setShowFull(!showFull)}
+          className="num text-[10px] text-slate-500 underline hover:text-slate-300"
+        >
+          {showFull ? "收起" : "查看完整榜"}
+        </button>
+      </div>
+
+      {/* 完整榜单 (展开) */}
+      {showFull && <FullLeaderboard />}
+    </div>
+  );
+}
+
+function FullLeaderboard() {
+  const { fullTop, myRank, total, loading, fetchFull } = useLeague();
+  const user = useGame((s) => s.user);
+  const save = useGame((s) => s.save);
+
+  useEffect(() => {
+    if (!user) return;
+    void fetchFull(user.uid);
+  }, []);
+
+  if (fullTop.length === 0) {
+    return (
+      <div className="mt-3 rounded border border-white/5 bg-black/20 p-3 text-center text-[11px] text-slate-600">
+        {loading ? "加载完整榜单..." : "暂无完整数据"}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 max-h-96 overflow-y-auto rounded border border-white/5 bg-black/20 p-2 scroll-slim">
+      <div className="mb-2 flex items-center justify-between px-1">
+        <span className="text-[11px] font-bold text-slate-400">完整榜单 Top {fullTop.length}</span>
+        <span className="num text-[10px] text-slate-600">共 {total} 人</span>
+      </div>
+      <div className="space-y-0.5">
+        {fullTop.map((r) => (
+          <div
+            key={r.uid}
+            className={`flex items-center gap-2 rounded px-2 py-1 text-[11px] ${r.me ? "bg-cyan-400/10 text-cyan-100" : "text-slate-500"}`}
+          >
+            <span className="num w-6 text-[10px] text-slate-600">#{r.rank}</span>
+            <RouteBadge route={r.route} />
+            <span className="flex-1 truncate">{r.account}</span>
+            <span className="num text-[10px]">{fmt(r.run_score)}</span>
+            <span className="num text-[9px] text-slate-700">{r.cores}核</span>
           </div>
         ))}
       </div>
-      <p className="mt-2 text-[10px] leading-4 text-slate-600">联机 PvE 排行榜 · 模拟节点(正式赛季由 dueGame 集群结算)</p>
+      {myRank && myRank.rank > 100 && (
+        <div className="mt-2 border-t border-white/5 pt-2">
+          <div className="text-[10px] text-slate-600">你的排名</div>
+          <div className="flex items-center gap-2 rounded bg-cyan-400/10 px-2 py-1 text-[11px] text-cyan-100">
+            <span className="num w-6 text-[10px]">#{myRank.rank}</span>
+            <span className="flex-1 truncate">{myRank.account}</span>
+            <span className="num">{fmt(myRank.run_score)}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -99,7 +245,7 @@ export default function SidePanel() {
       <div className="panel rounded-lg p-4">
         <div className="mb-1 flex items-center justify-between">
           <span className="hud-tag">TERRA · 近地轨道实况</span>
-          <span className="num text-[10px] text-slate-600">SAT-LINK 07</span>
+          <span className="num text-[10px] text-slate-600">SAT-LINK 07 {isRealApi ? "● LIVE" : "○ MOCK"}</span>
         </div>
         <EarthCanvas progress={progress} size={280} />
         <p className={`mt-1 text-center text-[11px] ${urgent ? "text-red-300/90" : "text-slate-500"}`}>
@@ -135,6 +281,8 @@ export default function SidePanel() {
 
       <div className="num text-center text-[10px] leading-4 text-slate-700">
         TICK {GLOBAL.tickMs}ms · AUTOSAVE {GLOBAL.autosaveMs / 1000}s · 离线收益 {GLOBAL.offlineEfficiency * 100}% 上限 {GLOBAL.offlineCapHours}h
+        <br />
+        {isRealApi ? "后端: 真实排行榜 (dueGame 协议)" : "后端: 模拟节点 (localStorage)"}
       </div>
     </aside>
   );
