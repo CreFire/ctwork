@@ -33,6 +33,26 @@ export interface RunState {
   stats: { energyTotal: number; clicks: number };
 }
 
+/** 单次轮回的编年史记录(escaped=false 时即为「文明墓碑」) */
+export interface RunRecord {
+  runId: number;
+  startedAt: number;
+  endedAt: number;
+  durationSec: number;
+  escaped: boolean;
+  route: RouteId | null;
+  era: number; // 抵达的纪元(已研究科技的最大 era)
+  researchCount: number;
+  buildingsTotal: number;
+  energyTotal: number;
+  clicks: number;
+  cores: number; // 本次结算星核
+  remainSec: number; // 结算时刻剩余倒计时
+  epitaph: string; // 墓志铭(仅毁灭时)
+}
+
+export const MAX_HISTORY = 40; // 编年史容量(新纪录在前,超出截断)
+
 export interface MetaState {
   cores: number; // 星核
   coreUp: Record<string, number>;
@@ -42,6 +62,7 @@ export interface MetaState {
   bestRemainSec: number;
   totalEnergy: number;
   totalClicks: number;
+  history: RunRecord[]; // 文明编年史
 }
 
 export interface SaveState {
@@ -210,7 +231,7 @@ export function researchAvailable(id: string, save: SaveState): "done" | "open" 
 /* ================= 存档生命周期 ================= */
 
 export function newMeta(): MetaState {
-  return { cores: 0, coreUp: {}, runs: 0, escapes: 0, deaths: 0, bestRemainSec: 0, totalEnergy: 0, totalClicks: 0 };
+  return { cores: 0, coreUp: {}, runs: 0, escapes: 0, deaths: 0, bestRemainSec: 0, totalEnergy: 0, totalClicks: 0, history: [] };
 }
 
 export function countdownBonus(meta: MetaState): number {
@@ -324,4 +345,66 @@ export function buildingDef(id: string): BuildingDef {
   const def = BUILDING_MAP.get(id);
   if (!def) throw new Error("unknown building " + id);
   return def;
+}
+
+/* ================= 文明编年史 · 墓碑 · 快照 ================= */
+
+/** 当前已抵达的纪元(以已研究科技的最大 era 计) */
+export function eraReachedOf(save: SaveState): number {
+  let era = 0;
+  for (const def of RESEARCH) {
+    if (save.run.research[def.id]) era = Math.max(era, def.era);
+  }
+  return era;
+}
+
+/** 在轮回终点为文明立传(结算时刻对当前 run 状态的整体快照) */
+export function makeRunRecord(save: SaveState, escaped: boolean, reward: RewardBreakdown, now: number): RunRecord {
+  let buildingsTotal = 0;
+  for (const n of Object.values(save.run.buildings)) buildingsTotal += n;
+  let researchCount = 0;
+  for (const id of Object.keys(save.run.research)) if (save.run.research[id]) researchCount++;
+  return {
+    runId: save.run.runId,
+    startedAt: save.run.startedAt,
+    endedAt: now,
+    durationSec: Math.max(0, Math.round((now - save.run.startedAt) / 1000)),
+    escaped,
+    route: save.run.route,
+    era: eraReachedOf(save),
+    researchCount,
+    buildingsTotal,
+    energyTotal: Math.max(0, Math.floor(save.run.stats.energyTotal)),
+    clicks: Math.floor(save.run.stats.clicks),
+    cores: reward.total,
+    remainSec: Math.max(0, Math.floor((save.run.deadlineAt - now) / 1000)),
+    epitaph: "",
+  };
+}
+
+/** 墓志铭池:以 runId 确定性选取,同一墓碑铭文恒定 */
+const EPITAPHS = [
+  "他们抬起了头,却没能等到离开的那天。",
+  "倒计时走完了,勇气还剩最后一格。",
+  "这颗星球埋葬了他们的城市,埋不掉他们的名字。",
+  "火种熄灭于黎明之前,但黎明终究会来。",
+  "他们把一切都算对了,除了时间。",
+  "尘埃记得每一盏没能点亮的灯。",
+  "没有方舟,他们便成为了星球本身。",
+  "日志的最后一行:不要为我们哭泣。",
+  "引力赢了这一局,而宇宙还很长。",
+  "他们在自己的摇篮里睡去,梦见了群星。",
+];
+
+export function epitaphFor(record: RunRecord): string {
+  let h = (record.runId + 1) * 2654435761;
+  h = (h ^ (h >>> 13)) >>> 0;
+  return EPITAPHS[h % EPITAPHS.length];
+}
+
+/** 落笔编年史(新纪录在前,容量截断) */
+export function pushHistory(meta: MetaState, rec: RunRecord): void {
+  if (!meta.history) meta.history = [];
+  meta.history.unshift(rec);
+  if (meta.history.length > MAX_HISTORY) meta.history.length = MAX_HISTORY;
 }

@@ -16,11 +16,16 @@ import {
 } from "./config";
 import * as E from "./engine";
 import { fmt } from "./fmt";
-import { server } from "@/services/mockServer";
+import { server as httpClient } from "@/services/serverClient";
+import { server as mockServer } from "@/services/mockServer";
+
+/** VITE_USE_MOCK=1 时使用前端内置模拟服务器(离线演示);默认连接正式 dueGame 后端(server/) */
+const server = import.meta.env.VITE_USE_MOCK === "1" ? mockServer : httpClient;
+
 import { sfx } from "./sound";
 import type { Derived, OfflineResult, RewardBreakdown, SaveState } from "./engine";
 
-export type TabId = "overview" | "energy" | "build" | "research" | "routes" | "launch";
+export type TabId = "overview" | "energy" | "build" | "research" | "routes" | "launch" | "chronicle";
 export type Tone = "info" | "success" | "warn" | "danger" | "story";
 
 export interface LogEntry {
@@ -45,6 +50,7 @@ export interface RunSummary {
   reward: RewardBreakdown;
   remainSec: number;
   runId: number;
+  epitaph?: string; // 墓志铭(毁灭结算时)
 }
 export interface OfflineReport {
   seconds: number;
@@ -129,6 +135,7 @@ export const useGame = create<GameStore>((set, get) => {
     } catch {
       save = null;
     }
+    if (save && !save.meta.history) save.meta.history = []; // 旧档兼容:补齐编年史字段
     const logs: LogEntry[] = [];
     let offline: OfflineReport | null = null;
     let summary: RunSummary | null = null;
@@ -149,9 +156,13 @@ export const useGame = create<GameStore>((set, get) => {
           save.meta.cores += reward.total;
           save.meta.runs += 1;
           save.meta.deaths += 1;
-          summary = { escaped: false, reward, remainSec: 0, runId: save.run.runId };
+          const record = E.makeRunRecord(save, false, reward, now);
+          record.epitaph = E.epitaphFor(record);
+          E.pushHistory(save.meta, record);
+          summary = { escaped: false, reward, remainSec: 0, runId: save.run.runId, epitaph: record.epitaph };
           save.run = E.newRun(save.meta.runs + 1, save.meta, now);
           logs.push(logOf("休眠期间,母星抵达了它的终点。", "danger"));
+          logs.push(logOf(`文明墓碑已立于编年史:「${record.epitaph}」`, "danger"));
         } else if (result.seconds > 60) {
           offline = { ...result, died: false };
           logs.push(logOf(`休眠 ${Math.floor(result.seconds / 60)} 分钟,方舟持续运转。`, "info"));
@@ -531,10 +542,13 @@ export const useGame = create<GameStore>((set, get) => {
         save.meta.deaths += 1;
       }
       const runId = save.run.runId;
+      const record = E.makeRunRecord(save, escaped, reward, now);
+      if (!escaped) record.epitaph = E.epitaphFor(record);
+      E.pushHistory(save.meta, record);
       save.run = E.newRun(save.meta.runs + 1, save.meta, now);
       set({
         cinematic: null,
-        summary: { escaped, reward, remainSec, runId },
+        summary: { escaped, reward, remainSec, runId, epitaph: record.epitaph || undefined },
         save: { ...save },
         derived: E.computeDerived(save),
         now,

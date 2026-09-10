@@ -155,6 +155,11 @@ export function SummaryModal() {
                   ? "没有人能阻止恒星的葬礼。逃生舱带着文明的残响离开轨道,回头时,太阳系只剩下一片缓缓扩散的尘埃。"
                   : "曲率引擎未能完工。在最后时刻,逃生舱脱离母船,成为文明唯一的种子。"}
             </p>
+            {summary.epitaph && (
+              <p className="mt-2 border-l-2 border-red-400/40 pl-3 text-[12px] italic leading-5 text-slate-300">
+                墓志铭:「{summary.epitaph}」
+              </p>
+            )}
             <div className="mt-4 space-y-1.5 rounded-lg border border-white/8 bg-black/25 p-3.5 text-[12px]">
               <div className="flex justify-between"><span className="text-slate-500">纪元保底</span><span className="num text-violet-200">+{summary.reward.base} 星核</span></div>
               <div className="flex justify-between"><span className="text-slate-500">产能折算</span><span className="num text-violet-200">+{summary.reward.production} 星核</span></div>

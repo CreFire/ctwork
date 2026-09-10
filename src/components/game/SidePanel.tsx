@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlarmClock, Trophy, TerminalSquare } from "lucide-react";
 import EarthCanvas from "@/components/EarthCanvas";
 import { GLOBAL, LEADERBOARD_NAMES } from "@/game/config";
 import { fmt, fmtClock } from "@/game/fmt";
 import { useGame } from "@/game/store";
 import type { Tone } from "@/game/store";
+import { server } from "@/services/serverClient";
 
 const TONE_CLASS: Record<Tone, string> = {
   info: "text-slate-400",
@@ -20,20 +21,65 @@ function hashStr(s: string): number {
   return h;
 }
 
+interface BoardRow {
+  key: string;
+  name: string;
+  score: number;
+  me: boolean;
+}
+
 function Leaderboard() {
   const save = useGame((s) => s.save);
   const user = useGame((s) => s.user);
-  const rows = useMemo(() => {
-    if (!save || !user) return [];
-    const mine = save.meta.totalEnergy + save.run.res.energy;
+  const [remote, setRemote] = useState<Array<{ uid: string; account: string; runScore: number }> | null>(null);
+  const [myScore, setMyScore] = useState<number | null>(null);
+
+  // 真实联机榜单:dueGame 网关 /api/v1/league/top,30s 轮询;失败回退模拟节点
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      server
+        .leagueTop(8)
+        .then((b) => {
+          if (!alive) return;
+          setRemote(b.list.map((r) => ({ uid: r.uid, account: r.account, runScore: r.runScore })));
+          setMyScore(b.me ? b.me.runScore : null);
+        })
+        .catch(() => {
+          if (alive) setRemote(null);
+        });
+    load();
+    const t = setInterval(load, 30_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, []);
+
+  const rows = useMemo<BoardRow[]>(() => {
+    if (!user) return [];
+    const mine = save ? save.meta.totalEnergy + save.run.res.energy : 1;
+    if (remote && remote.length > 0) {
+      const list: BoardRow[] = remote.map((r) => ({
+        key: r.uid,
+        name: r.account,
+        score: r.runScore,
+        me: r.uid === user.uid,
+      }));
+      if (!list.some((r) => r.me)) {
+        list.push({ key: user.uid, name: `${user.account} (你)`, score: myScore ?? Math.max(1, Math.floor(mine)), me: true });
+      }
+      return list.sort((a, b) => b.score - a.score).slice(0, 8);
+    }
+    // 离线兜底:模拟节点
     const list = LEADERBOARD_NAMES.slice(0, 9).map((name, i) => {
       const h = hashStr(user.uid + name);
       const factor = 0.35 + ((h % 100) / 100) * 2.4 - i * 0.1;
-      return { name, score: Math.max(1, mine * Math.max(0.05, factor)), me: false };
+      return { key: name, name, score: Math.max(1, mine * Math.max(0.05, factor)), me: false };
     });
-    list.push({ name: `${user.account} (你)`, score: Math.max(1, mine), me: true });
+    list.push({ key: user.uid, name: `${user.account} (你)`, score: Math.max(1, mine), me: true });
     return list.sort((a, b) => b.score - a.score).slice(0, 8);
-  }, [save, user]);
+  }, [remote, myScore, save, user]);
 
   return (
     <div className="panel rounded-lg p-4">
@@ -44,7 +90,7 @@ function Leaderboard() {
       <div className="space-y-1">
         {rows.map((r, i) => (
           <div
-            key={r.name}
+            key={r.key}
             className={`flex items-center gap-2 rounded px-1.5 py-1 text-[11px] ${r.me ? "bg-cyan-400/10 text-cyan-100" : "text-slate-500"}`}
           >
             <span className={`num w-4 text-[10px] ${i === 0 ? "text-amber-300" : r.me ? "text-cyan-300" : "text-slate-600"}`}>{i + 1}</span>
@@ -53,7 +99,9 @@ function Leaderboard() {
           </div>
         ))}
       </div>
-      <p className="mt-2 text-[10px] leading-4 text-slate-600">联机 PvE 排行榜 · 模拟节点(正式赛季由 dueGame 集群结算)</p>
+      <p className="mt-2 text-[10px] leading-4 text-slate-600">
+        {remote ? "联机榜单 · dueGame v0.1 集群实时结算" : "联机 PvE 排行榜 · 模拟节点(正式赛季由 dueGame 集群结算)"}
+      </p>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LayoutDashboard, Zap, Hammer, FlaskConical, Network, Rocket, Loader2 } from "lucide-react";
+import { LayoutDashboard, Zap, Hammer, FlaskConical, Network, Rocket, Loader2, Landmark } from "lucide-react";
 import StarCanvas from "@/components/StarCanvas";
 import AuthScreen from "@/components/AuthScreen";
 import TopBar from "@/components/game/TopBar";
@@ -11,6 +11,7 @@ import BuildTab from "@/components/game/BuildTab";
 import ResearchTab from "@/components/game/ResearchTab";
 import RoutesTab from "@/components/game/RoutesTab";
 import LaunchTab from "@/components/game/LaunchTab";
+import ChronicleTab from "@/components/game/ChronicleTab";
 import { CinematicOverlay, CrateButton, OfflineModal, SummaryModal, Toasts, UrgencyVignette } from "@/components/game/Overlays";
 import { AUTOSAVE_MS, TICK_MS, useGame } from "@/game/store";
 import type { TabId } from "@/game/store";
@@ -22,6 +23,7 @@ const TABS: Array<{ id: TabId; name: string; icon: typeof Zap; en: string }> = [
   { id: "research", name: "科技树", icon: FlaskConical, en: "SCIENCE" },
   { id: "routes", name: "飞升路线", icon: Network, en: "ASCEND" },
   { id: "launch", name: "方舟发射", icon: Rocket, en: "LAUNCH" },
+  { id: "chronicle", name: "文明编年史", icon: Landmark, en: "CHRONICLE" },
 ];
 
 function GameShell() {
@@ -63,6 +65,7 @@ function GameShell() {
               {tab === "research" && <ResearchTab />}
               {tab === "routes" && <RoutesTab />}
               {tab === "launch" && <LaunchTab />}
+              {tab === "chronicle" && <ChronicleTab />}
             </motion.div>
           </AnimatePresence>
         </section>

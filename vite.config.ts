@@ -16,4 +16,18 @@ export default defineConfig({
       "@": path.resolve(__dirname, "src"),
     },
   },
+  server: {
+    host: true,
+    proxy: {
+      // dev 前端 → 本地 dueGame 网关(server/,默认 :8090)
+      "/api": { target: "http://127.0.0.1:8090", changeOrigin: true },
+    },
+  },
+  preview: {
+    host: true,
+    proxy: {
+      "/api": { target: "http://127.0.0.1:8090", changeOrigin: true },
+    },
+  },
 });
+

@@ -35,3 +35,9 @@ Thumbs.db
 
 # 本地下载包
 ark-era-v0.1.zip
+
+# 后端
+server/bin/
+server/data/
+*.secret
+.arena-tmp/
