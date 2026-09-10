@@ -33,21 +33,17 @@ function Leaderboard() {
   const { top, myRank, myRankNumber, total, source, loading, error, lastFetchedAt, fetch, refresh } = useLeague();
   const [showFull, setShowFull] = useState(false);
 
-  // 初次加载与定时刷新
   useEffect(() => {
     if (!save || !user) return;
     void fetch(save, user.uid, user.account);
-  }, [save?.meta.totalEnergy, user?.uid]); // 当总能量变化时刷新（模拟实时）
+  }, [save?.meta.totalEnergy, user?.uid]);
 
   const handleRefresh = () => {
     if (!save || !user) return;
     void refresh(save, user.uid, user.account);
   };
 
-  const rows = useMemo(() => {
-    if (top.length > 0) return top;
-    return [];
-  }, [top]);
+  const rows = useMemo(() => top, [top]);
 
   return (
     <div className="panel rounded-lg p-4">
@@ -66,11 +62,7 @@ function Leaderboard() {
           )}
         </div>
         <div className="flex items-center gap-1.5">
-          {myRankNumber && (
-            <span className="num text-[10px] text-cyan-300/80">
-              #{myRankNumber}/{total}
-            </span>
-          )}
+          {myRankNumber && <span className="num text-[10px] text-cyan-300/80">#{myRankNumber}/{total}</span>}
           <button
             onClick={handleRefresh}
             disabled={loading}
@@ -82,14 +74,12 @@ function Leaderboard() {
         </div>
       </div>
 
-      {/* 错误提示 */}
       {error && (
         <div className="mb-2 rounded border border-red-400/20 bg-red-500/10 px-2 py-1 text-[10px] text-red-300">
           {error}
         </div>
       )}
 
-      {/* 榜单 */}
       <div className="space-y-1">
         {rows.length === 0 ? (
           <div className="py-6 text-center text-[11px] text-slate-600">
@@ -121,7 +111,6 @@ function Leaderboard() {
         )}
       </div>
 
-      {/* 我的排名 (若不在 Top8) */}
       {myRank && myRankNumber && myRankNumber > 8 && (
         <div className="mt-2 border-t border-white/5 pt-2">
           <div className="flex items-center gap-2 rounded bg-cyan-400/10 px-1.5 py-1 text-[11px] text-cyan-100 ring-1 ring-cyan-400/20">
@@ -138,15 +127,11 @@ function Leaderboard() {
           {source === "real" ? `联机实时榜 · ${total} 位开拓者` : "模拟节点 · 正式赛季由 dueGame 集群结算"}
           {lastFetchedAt && <span className="ml-1 text-slate-700">· {new Date(lastFetchedAt).toLocaleTimeString()}</span>}
         </p>
-        <button
-          onClick={() => setShowFull(!showFull)}
-          className="num text-[10px] text-slate-500 underline hover:text-slate-300"
-        >
+        <button onClick={() => setShowFull(!showFull)} className="num text-[10px] text-slate-500 underline hover:text-slate-300">
           {showFull ? "收起" : "查看完整榜"}
         </button>
       </div>
 
-      {/* 完整榜单 (展开) */}
       {showFull && <FullLeaderboard />}
     </div>
   );
@@ -155,7 +140,6 @@ function Leaderboard() {
 function FullLeaderboard() {
   const { fullTop, myRank, total, loading, fetchFull } = useLeague();
   const user = useGame((s) => s.user);
-  const save = useGame((s) => s.save);
 
   useEffect(() => {
     if (!user) return;
@@ -178,10 +162,7 @@ function FullLeaderboard() {
       </div>
       <div className="space-y-0.5">
         {fullTop.map((r) => (
-          <div
-            key={r.uid}
-            className={`flex items-center gap-2 rounded px-2 py-1 text-[11px] ${r.me ? "bg-cyan-400/10 text-cyan-100" : "text-slate-500"}`}
-          >
+          <div key={r.uid} className={`flex items-center gap-2 rounded px-2 py-1 text-[11px] ${r.me ? "bg-cyan-400/10 text-cyan-100" : "text-slate-500"}`}>
             <span className="num w-6 text-[10px] text-slate-600">#{r.rank}</span>
             <RouteBadge route={r.route} />
             <span className="flex-1 truncate">{r.account}</span>
@@ -217,7 +198,6 @@ export default function SidePanel() {
 
   return (
     <aside className="space-y-4">
-      {/* 倒计时 */}
       <div className={`panel rounded-lg p-4 ${urgent ? "urgent-pulse" : ""}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -226,9 +206,7 @@ export default function SidePanel() {
           </div>
           <span className="num text-[10px] text-slate-600">RUN #{save.run.runId}</span>
         </div>
-        <div className={`num mt-2 text-center text-[42px] font-bold leading-none tracking-wide ${urgent ? "text-red-300" : "text-slate-100"}`}>
-          {fmtClock(remain)}
-        </div>
+        <div className={`num mt-2 text-center text-[42px] font-bold leading-none tracking-wide ${urgent ? "text-red-300" : "text-slate-100"}`}>{fmtClock(remain)}</div>
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/5">
           <div
             className={`bar-shimmer h-full rounded-full transition-[width] duration-300 ${progress < 0.6 ? "bg-gradient-to-r from-cyan-500 to-cyan-300" : progress < 0.85 ? "bg-gradient-to-r from-amber-500 to-orange-400" : "bg-gradient-to-r from-red-600 to-red-400"}`}
@@ -241,7 +219,6 @@ export default function SidePanel() {
         </div>
       </div>
 
-      {/* 地球实况 */}
       <div className="panel rounded-lg p-4">
         <div className="mb-1 flex items-center justify-between">
           <span className="hud-tag">TERRA · 近地轨道实况</span>
@@ -259,7 +236,6 @@ export default function SidePanel() {
         </p>
       </div>
 
-      {/* 日志 */}
       <div className="panel rounded-lg p-4">
         <div className="mb-2.5 flex items-center gap-2">
           <TerminalSquare className="size-3.5 text-cyan-300/80" />
@@ -268,9 +244,7 @@ export default function SidePanel() {
         <div className="scroll-slim max-h-64 space-y-1.5 overflow-y-auto pr-1">
           {[...logs].reverse().map((l) => (
             <div key={l.id} className="rise-in flex gap-2 text-[11px] leading-4.5">
-              <span className="num shrink-0 text-slate-600">
-                {new Date(l.time).toLocaleTimeString("zh-CN", { hour12: false })}
-              </span>
+              <span className="num shrink-0 text-slate-600">{new Date(l.time).toLocaleTimeString("zh-CN", { hour12: false })}</span>
               <span className={TONE_CLASS[l.tone]}>{l.text}</span>
             </div>
           ))}
