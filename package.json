@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:full": "concurrently \"npm run server:dev\" \"vite\"",
+    "dev": "node api.js && vite",
+    "dev:full": "node api.js && concurrently \"npm run server:dev\" \"vite\"",
     "build": "vite build",
     "preview": "vite preview",
     "gen:luban": "node scripts/luban-gen.mjs",

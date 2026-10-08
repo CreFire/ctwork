@@ -2,10 +2,10 @@
   "name": "ark-era-server",
   "version": "0.2.0",
   "type": "module",
-  "description": "方舟纪元排行榜后端 - Node 实现 (dueGame 协议兼容)",
+  "description": "\u65b9\u821f\u7eaa\u5143\u6392\u884c\u699c\u540e\u7aef - Node \u5b9e\u73b0 (dueGame \u534f\u8bae\u517c\u5bb9)",
   "scripts": {
-    "dev": "node --watch src/index.mjs",
-    "start": "node src/index.mjs"
+    "dev": "node api.js && node --watch src/index.mjs",
+    "start": "node api.js && node src/index.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",
